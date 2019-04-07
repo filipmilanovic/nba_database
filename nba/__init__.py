@@ -20,7 +20,7 @@ import pymysql # used to interact with sql (namely, load csv)
 from sqlalchemy import create_engine # used to interact with sql (namely, upload csv)
 
 # Set start time for calculating time lapsed
-START_TIME = time.time()
+start_time = time.time()
 
 ## Create root path
 p = str(Path(__file__).parents[0]).replace('\\', '/')
