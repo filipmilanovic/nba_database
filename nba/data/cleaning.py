@@ -21,6 +21,7 @@ elif loadtype == 'csv':
 print('Removing pre and post-season games and adding season identifier ' + str(time.time() - start_time))
 gamedata.Date = pd.to_datetime(gamedata.Date)
 
+gamedata = gamedata[(gamedata.Date > datetime(2019,10,15))|(gamedata.Date < datetime(2019,4,12))]
 gamedata = gamedata[(gamedata.Date > datetime(2018,10,17))|(gamedata.Date < datetime(2018,4,13))]
 gamedata = gamedata[(gamedata.Date > datetime(2017,10,17))|(gamedata.Date < datetime(2017,4,14))]
 gamedata = gamedata[(gamedata.Date > datetime(2016,10,25))|(gamedata.Date < datetime(2016,4,15))]
@@ -34,7 +35,8 @@ gamedata = gamedata[(gamedata.Date > datetime(2009,10,27))|(gamedata.Date < date
 gamedata = gamedata[(gamedata.Date > datetime(2008,10,28))]
 
 
-gamedata['Season'] = [2018 if Date > datetime(2017,10,17) else
+gamedata['Season'] = [2019 if Date > datetime(2018,10,15) else
+                      2018 if Date > datetime(2017,10,17) else
                       2017 if Date > datetime(2016,10,25) else
                       2016 if Date > datetime(2015,10,27) else
                       2015 if Date > datetime(2014,10,28) else
@@ -45,10 +47,10 @@ gamedata['Season'] = [2018 if Date > datetime(2017,10,17) else
                       2010 if Date > datetime(2009,10,27) else
                       2009 for Date in gamedata['Date']]
 
-gamedata.loc[(gamedata['HomeTeam'] == 'Hornets') & (gamedata['Date'] < date(2014,10,9)) ,'HomeTeam'] = 'Pelicans'
-gamedata.loc[(gamedata['AwayTeam'] == 'Hornets') & (gamedata['Date'] < date(2014,10,9)) ,'AwayTeam'] = 'Pelicans'
-gamedata.loc[(gamedata['HomeTeam'] == 'Bobcats') & (gamedata['Date'] < date(2014,10,9)) ,'HomeTeam'] = 'Hornets'
-gamedata.loc[(gamedata['AwayTeam'] == 'Bobcats') & (gamedata['Date'] < date(2014,10,9)) ,'AwayTeam'] = 'Hornets'
+gamedata.loc[(gamedata['HomeTeam'] == 'Hornets') & (gamedata['Date'] < datetime(2014,10,9)), 'HomeTeam'] = 'Pelicans'
+gamedata.loc[(gamedata['AwayTeam'] == 'Hornets') & (gamedata['Date'] < datetime(2014,10,9)), 'AwayTeam'] = 'Pelicans'
+gamedata.loc[(gamedata['HomeTeam'] == 'Bobcats') & (gamedata['Date'] < datetime(2014,10,9)), 'HomeTeam'] = 'Hornets'
+gamedata.loc[(gamedata['AwayTeam'] == 'Bobcats') & (gamedata['Date'] < datetime(2014,10,9)), 'AwayTeam'] = 'Hornets'
 
 gamedata = gamedata.loc[gamedata.HomeTeam != 'Team Stephen']
 gamedata = gamedata.loc[gamedata.HomeTeam != 'WEST']
@@ -71,7 +73,7 @@ gamedata.index = range(len(gamedata))
 gamedata.GameID = range(len(gamedata))
 
 gamedata.to_csv(p+'/data/output/gamedata.csv')
-from data import gamelog # @UnresolvedImport
+import gamelog # @UnresolvedImport
 gamelog = pd.read_csv(p+'/data/output/gamelog.csv')
 
 homelog = gamelog.loc[gamelog['Home/Away']=='Home']
@@ -103,7 +105,7 @@ columns = 'GameID', 'Date', 'HomeTeam', 'HomeScore', 'AwayTeam', 'AwayScore', 'R
 
 gamedata = gamedata.reindex(columns = columns)
 
-gamedata = gamedata.convert_objects(convert_numeric=True)
+# gamedata = gamedata.convert_objects(convert_numeric=True)
 
 gamedata.to_csv(p+'/data/output/gamedata.csv')
 

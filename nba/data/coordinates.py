@@ -1,5 +1,7 @@
 from nba import *
 
+#### THIS IS STILL BROKEN THE LONGITUDE/LATITUDE NUMBERS ARE NOT YET RIGHT
+
 print('Getting coordinates ' + str(time.time() - start_time))
 # set up mysql connection and load teams table
 names = '76ers', 'Bucks', 'Bulls', 'Cavaliers', 'Celtics', 'Clippers', 'Grizzlies', 'Hawks', 'Heat',\
@@ -21,31 +23,49 @@ teams = 'Philadelphia 76ers', 'Milwaukee Bucks', 'Chicago Bulls', 'Cleveland Cav
 'Golden State Warriors', 'Washington Wizards'
 
 # convert table to pandas dataframe
-columns = 'Team', 'FullTeam', 'City', 'Coordinates'
-location = pd.DataFrame(columns = columns)
-location['Team'] = names
-location['FullTeam'] = teams
-location['City'] = cities
+columns = 'TEAM', 'FULLNAME', 'CITY', 'LONGITUDE', 'LATITUDE'
+coordinates = pd.DataFrame(columns = columns)
+coordinates['TEAM'] = names
+coordinates['FULLNAME'] = teams
+coordinates['CITY'] = cities
 
-## selenium driver
-driver = webdriver.Chrome(executable_path="C:/Program Files (x86)/Python/Python36/Scripts/chromedriver.exe")
+# selenium driver
+driver = webdriver.Chrome(executable_path="C:/Users/filip/PycharmProjects/modelling/venv/Scripts/chromedriver.exe")
 
 # Connect to website
-driver.get("https://www.latlong.net/")
+driver.get("https://www.google.com.au/maps")
 
-for i in range(len(location)):
-    entry = driver.find_element_by_xpath("/html/body/main/div[1]/div[1]/form[1]/input")
+
+for i in range(len(cities)):
+    # enter name into search bar
+    entry = driver.find_element_by_xpath("//*[@id='searchboxinput']")
     entry.clear()
     entry.click()
-    entry.send_keys(location.loc[i,'City'])
-        
-    find = driver.find_element_by_xpath("/html/body/main/div[1]/div[1]/form[1]/button")
-    find.click()
-    
-    time.sleep(2)
-    coord = driver.find_element_by_xpath("//*[@id='latlongmap']/div/div/div[1]/div[3]/div[2]/div[4]/div/div[2]/div[1]/div")
-    location.loc[i,'Coordinates'] = coord.text
+    entry.send_keys(cities[i])
 
-location.to_csv(p+'/data/output/location.csv')
-location.to_sql('location', con=engine, schema='espn', if_exists='replace')
+    # click on search button
+    search = driver.find_element_by_xpath("//*[@id='searchbox-searchbutton']")
+    search.click()
+
+    # grab url and coordinates
+    time.sleep(3)
+    url = str(driver.current_url)
+    lng = url[url.find('@')+1:url.find('@')+11]
+    lat = url[url.find('@')+12:url.find('@')+23]
+
+    # put to table
+    coordinates.loc[i, 'LONGITUDE'] = lng.replace(',','')
+    coordinates.loc[i, 'LATITUDE'] = lat.replace(',','')
+    print(cities[i])
+
+print(coordinates)
+coordinates.to_csv(p+'/data/output/coordinates.csv')
+coordinates.to_sql('coordinates', con=engine, schema='nba', if_exists='replace')
+
+driver.close()
+
 print('Loaded coordinates ' + str(time.time() - start_time))
+
+# put to table
+#coordinates = dict()
+#coordinates[i] = {lng + ', ' + lat}

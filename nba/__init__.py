@@ -4,9 +4,9 @@ import time # used to calculate time lapsed when running
 import re # used for regular expression data cleaning
 import pandas as pd # used for dataframe creation and manipulation
 import numpy as np # used for array manipulation
-from geopy.distance import vincenty # used to calculate distances between cities
+from geopy.distance import geodesic # used to calculate distances between cities
 from sklearn import svm, ensemble, metrics, preprocessing # used for model building
-from xgboost.sklearn import XGBClassifier # used for xg boost model
+# from xgboost.sklearn import XGBClassifier # used for xg boost model
 import pickle # used for saving model object
 from flask import Flask, request, json # used for api creation
 import requests as r # used to send requests to api
@@ -27,9 +27,10 @@ p = str(Path(__file__).parents[0]).replace('\\', '/')
 
 ## pymysql connection
 connection = pymysql.connect(host='localhost',
+                             port=3306,
                              user='root',
-                             password='',
-                             db='espn')
+                             password='password',
+                             database='nba')
 
 ## sqlalchemy engine
-# engine = create_engine("mysql+mysqlconnector://root:password@localhost/espn")
+engine = create_engine("mysql://root:password@localhost/nba")
