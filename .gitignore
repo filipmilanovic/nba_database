@@ -1,8 +1,7 @@
 # files
-test.py
-debug.log
+/**/test.py
+/**/debug.log
 /**/output/*.csv
 
 # environment variables
-projects/nba/utils/environment.py
-
+**/environment.py

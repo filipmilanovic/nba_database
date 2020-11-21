@@ -15,7 +15,7 @@ def scrape_games(game_date, driver, df):
     ascore = driver.find_elements_by_xpath(
         "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[2]")
     # there is a loose game_summary on every page that returns an empty result
-    for j in range(1, len(hteams)):
+    for j in range(len(hteams)):
         df.loc[j, 'date'] = str(game_date.strftime('%Y-%m-%d'))
         df.loc[j, 'home_team'] = hteams[j].text
         df.loc[j, 'home_score'] = hscore[j].text
