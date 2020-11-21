@@ -1,19 +1,18 @@
-""" Project controls """
+# PROJECT CONTROLS
+
 # Load raw data
-from projects.nba.data import scraping
+from projects.nba.data.scraping import games
+# from projects.nba.data.scraping import teams
+# from projects.nba.data.scraping import plays
+
+# Create game_logs
+# from projects.nba.data import game_logs
 
 # Load daily data
-#from data import espn # @UnresolvedImport
-#from data import odds # @UnresolvedImport
-#from data import cleaning # @UnresolvedImport
-
-# Just for cleaning data
-#from data import cleaning # @UnresolvedImport
+# from data import odds
+# from data import cleaning
 
 # For running model
-#from models import svm # @UnresolvedImport
-#from models import randomforest # @UnresolvedImport
-#from models import xgb # @UnresolvedImport
-
-# For running model
-#from nba import testing # @UnresolvedImport
+# from models import svm
+# from models import randomforest
+# from models import xgb

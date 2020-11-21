@@ -4,7 +4,7 @@ if LOAD_METHOD == 'sql':
     games = pd.read_sql(sql=sql.select([games_sql]), con=engine, index_col='index')
     print(Colour.green + 'Loaded games from SQL' + Colour.end)
 elif LOAD_METHOD == 'csv':
-    games = pd.read_csv(str(p)+'/data/output/games.csv', sep=',')
+    games = pd.read_csv(str(p)+'/data/output/games.csv', sep=',', index_col='index')
     print(Colour.green + 'Loaded games from CSV' + Colour.end)
 else:
     print(Colour.red + 'No method for loading data selected' + Colour.end)
@@ -13,7 +13,7 @@ else:
 # location = pd.read_csv(p+'/data/output/location.csv')
 # del location['Unnamed: 0']
 
-gamelog = pd.DataFrame()
+game_log = pd.DataFrame()
 
 # print('Creating Game Logs')
 # for i in location['Team']:
