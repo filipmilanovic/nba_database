@@ -4,7 +4,7 @@
 #### Modules to run
 To use this package, run the modules in the following order:
 
-**1. espn.py** - This module is used to scrape daily score data from the ESPN scoreboard website.
+**1. scraping.py** - This module is used to scrape daily score data from the ESPN scoreboard website.
 				 Note that data prior to the 2014/15 season does not currently load cleanly due to failure to
 				 cleanly scrape Charlotte Bobcats data (probably due to the name change).
 				 This uncleaned dataset is output as a gamedata_raw.
