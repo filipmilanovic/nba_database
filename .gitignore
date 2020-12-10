@@ -1,2 +1,7 @@
-# testing file
-test.py
+# files
+/**/test.py
+/**/debug.log
+/**/output/*.csv
+
+# environment variables
+**/environment.py

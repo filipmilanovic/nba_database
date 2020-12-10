@@ -1,4 +1,4 @@
-""" Import functions for use in projects """
+# IMPORTING OVERALL SYSTEM VARIABLES
 import os  # used for system variables
 from pathlib import Path  # used for setting up directory
 import time  # used to calculate time lapsed when running

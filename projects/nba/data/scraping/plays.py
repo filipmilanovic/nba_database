@@ -1,75 +1,86 @@
-""" Scraping game data """
+# SCRAPING PLAY BY PLAY DATA
 from projects.nba import *  # import all project specific utils
-from selenium import webdriver  # used for interacting with webpages
+from projects.nba.data.scraping import *
 
-games = load_games()
-print(games)
-# set up basic dataframe by loading from SQL if exists, or generating empty one
-# try:
-#     plays_raw = pd.read_sql(sql=sql.select([games_sql]), con=engine, index_col='index')
-#     columns = plays_raw.columns.values
-# except (sql.exc.NoSuchTableError, sql.exc.OperationalError, NameError) as error:
-#     columns = ['date', 'home_team', 'home_score', 'away_team', 'away_score']
-#     plays_raw = pd.DataFrame(columns=columns)
 
-# pick up date range from parameters
-date_range = pd.date_range(start_date_plays, end_date_plays)
+def get_game_ref(df):
+    short_date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
+    short_name = [x for x in df.home_team]
+    return short_date + '0' + short_name
 
-if SKIP_SCRAPED_DAYS:
-    date_range = date_range[~date_range.isin(plays_raw.date)]
 
-# selenium driver
-driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe")
+def scrape_plays(driver):
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+    df = [x.getText().encode('utf-8') for x in soup.find_all('tr')
+          if x.get('data-row') is not None]
+    return df
 
-driver.get("https://www.basketball-reference.com/boxscores/?month=" + str(date_range[0].strftime('%m'))
-           + '&day=' + str(date_range[0].strftime('%d')) + '&year=' + str(date_range[0].strftime('%Y')))
 
-# nbr_games = driver.find_element_by_xpath('//*[@id="content"]/div[2]/h2')
-# print(left(nbr_games.text, 2)*1)
+def get_plays_data(iterations):
+    # selenium driver
+    driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
+                              options=options)
 
-print(games)
+    for i in range(len(iterations)):
+        # load website using index
+        driver.get("https://www.basketball-reference.com/boxscores/pbp/" + iterations[i] + ".html")
 
-driver.get("https://www.basketball-reference.com/boxscores/pbp/201810160GSW.html")
+        game_plays = scrape_plays(driver)
 
-driver.find_elements_by_link_text('Play-By-Play')[0].url
+        game_plays = pd.DataFrame(game_plays, columns=['plays'])
+        game_plays['game_ref'] = iterations[i]
 
-# for i in range(len(date_range)):
-#     # clear out daily data frame and select next date
-#     daily = pd.DataFrame(columns=columns)
-#
-#     # go to game scores for the day
-#     driver.get("https://www.basketball-reference.com/boxscores/?month=" + str(date_range[i].strftime('%m'))
-#                + '&day=' + str(date_range[i].strftime('%d')) + '&year=' + str(date_range[i].strftime('%Y')))
-#
-#     # wait for page to load
-#     time.sleep(1)
-#
-#     # scrape the daily data
-#     scrape_games(date_range[i], driver, daily)
-#
-#     # append daily data to plays_raw, and remove any duplicates
-#     plays_raw = pd.concat([plays_raw, daily]).drop_duplicates().reset_index(drop=True)
-#
-#     # attempt to write to csv
-#     try:
-#         plays_raw.to_csv(str(p) + '/data/output/plays_raw.csv', sep=',')
-#         status_csv = Colour.green + 'Successfully written to csv!' + Colour.end
-#     except FileNotFoundError:
-#         status_csv = Colour.red + 'Failed to write to CSV! (Path does not exist)' + Colour.end
-#     except PermissionError:
-#         status_csv = Colour.red + 'Failed to write to CSV! (File already opened)' + Colour.end
-#
-#     # attempt to write to sql
-#     try:
-#         plays_raw.to_sql('plays_raw', con=engine, schema='nba', if_exists='replace')
-#         status_sql = Colour.green + 'Successfully written to MySQL Database!' + Colour.end
-#     except sql.exc.OperationalError:
-#         status_sql = Colour.red + 'Failed to write to DB!' + Colour.end
-#
-#     print(str(date_range[i].strftime('%Y-%m-%d')) + ' ' + status_csv + ' ' + status_sql + ' '
-#           + str('{0:.2f}'.format(time.time() - start_time)) + ' seconds so far')
+        # clear rows where game already exists
+        connection_raw.execute(f'delete from nba_raw.plays_raw where game_ref = "{iterations[i]}"')
 
-# driver.close()
+        status = write_data(df=game_plays,
+                            name='plays_raw',
+                            to_csv=False,
+                            sql_engine=engine_raw,
+                            db_schema='nba_raw',
+                            if_exists='append',
+                            index=False)
 
-print(Colour.green + 'Game Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
-      + ' seconds taken' + Colour.end)
+        progress(iteration=i,
+                 iterations=len(iterations),
+                 iteration_name=iterations[i],
+                 lapsed=time_lapsed(),
+                 sql_status=status['sql'],
+                 csv_status=status['csv'])
+
+    driver.close()
+
+
+if __name__ == '__main__':
+    # column names for plays_raw table
+    columns = ['plays', 'game_ref']
+
+    # get plays_raw dataframe from DB, or build from scratch
+    plays_raw = initialise_df(table_name='plays_raw',
+                              columns=columns,
+                              sql_engine=engine_raw,
+                              meta=metadata_raw)
+
+    # load games table to help set up loop
+    games = load_data(df='games',
+                      sql_engine=engine,
+                      meta=metadata)
+
+    # pick up date range from parameters
+    date_range = pd.date_range(start_date_plays, end_date_plays)
+
+    # load games in selected date range
+    games = games.loc[games.date.isin(date_range.strftime('%Y-%m-%d'))]
+
+    # create game index for accessing website
+    game_ref = get_game_ref(games)
+
+    # skip games that have already been scraped
+    if SKIP_SCRAPED_DAYS:
+        game_ref = game_ref[~game_ref.isin(plays_raw.game_ref)]
+
+    # get data and write to DB/CSV
+    get_plays_data(game_ref)
+
+    print(Colour.green + 'Game Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+          + ' seconds taken' + Colour.end)
