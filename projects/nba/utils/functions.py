@@ -5,6 +5,24 @@ from projects.nba.utils.connections import *
 from projects.nba.utils.path import *
 import pandas as pd
 import sqlalchemy as sql
+import sys
+
+
+# Useful functions
+def progress(iteration, iterations, iteration_name, lapsed, sql_status, csv_status):
+    # rewrite on same line
+    sys.stdout.write('\r')
+    sys.stdout.write("[%-20s] %d%% %s %s %s %s" % ('='*round((iteration+1)/(iterations/20)),
+                                                   (iteration+1)/iterations*100,
+                                                   iteration_name,
+                                                   lapsed + ' seconds lapsed',
+                                                   sql_status,
+                                                   csv_status))
+    sys.stdout.flush()
+
+
+def time_lapsed():
+    return str('{0:.2f}'.format(time.time() - start_time))
 
 
 # Load data
@@ -12,7 +30,7 @@ def load_data(df, sql_engine, meta):
     # try SQL, then try CSV
     try:
         df_sql = sql.Table(f'{df}', meta, autoload=True, autoload_with=sql_engine)
-        output = pd.read_sql(sql=sql.select([df_sql]), con=sql_engine, index_col='index')
+        output = pd.read_sql(sql=sql.select([df_sql]), con=sql_engine)
         print(Colour.green + f'Loaded {df} from SQL' + Colour.end)
     except sql.exc.NoSuchTableError:
         print(Colour.red + f'Table {df} does not exist in DB' + Colour.end)
@@ -20,7 +38,7 @@ def load_data(df, sql_engine, meta):
         print(Colour.red + f'Could not load table {df} from SQL' + Colour.end)
         print(Colour.green + "Trying from CSV" + Colour.end)
         try:
-            output = pd.read_csv(str(p) + f'/data/scraping/output/{df}.csv', sep=',', index_col=0)
+            output = pd.read_csv(str(p) + f'/data/scraping/output/{df}.csv', sep=',', index_col=False)
             print(Colour.green + f'Loaded {df} from CSV' + Colour.end)
         except FileNotFoundError:
             print(Colour.red + f'Could not load table {df} from CSV' + Colour.end)
@@ -29,27 +47,35 @@ def load_data(df, sql_engine, meta):
 
 
 # Write data
-def write_data(df, name, to_csv, sql_engine, db_schema, if_exists='replace', iteration=''):
+def write_data(df,
+               name,
+               to_csv,
+               sql_engine,
+               db_schema,
+               if_exists='replace',
+               index=True):
     if to_csv:
         try:
-            df.to_csv(str(p) + f'/data/output/{name}.csv', sep=',')
-            status_csv = Colour.green + 'Successfully written to csv! ' + Colour.end
+            df.to_csv(str(p) + f'/data/output/{name}.csv', sep=',', index=index)
+            status_csv = Colour.green + 'CSV (Success)' + Colour.end
         except FileNotFoundError:
-            status_csv = Colour.red + 'Failed to write to CSV! (Path does not exist) ' + Colour.end
+            status_csv = Colour.red + 'CSV (Path does not exist) ' + Colour.end
         except PermissionError:
-            status_csv = Colour.red + 'Failed to write to CSV! (File already opened) ' + Colour.end
+            status_csv = Colour.red + 'CSV (File already opened) ' + Colour.end
     else:
-        status_csv = ''
+        status_csv = Colour.red + 'CSV (Excluded)' + Colour.end
 
     # write to sql
     try:
-        df.to_sql(name, con=sql_engine, schema=db_schema, if_exists=if_exists)
-        status_sql = Colour.green + 'Successfully written to MySQL Database!' + Colour.end
+        df.to_sql(name, con=sql_engine, schema=db_schema, if_exists=if_exists, index=index)
+        status_sql = Colour.green + 'MySQL (Success)' + Colour.end
     except sql.exc.OperationalError:
-        status_sql = Colour.red + 'Failed to write to DB!' + Colour.end
+        status_sql = Colour.red + 'MySQL (Failed)' + Colour.end
 
-    print(str(iteration) + ' ' + status_csv + status_sql + ' '
-          + str('{0:.2f}'.format(time.time() - start_time)) + ' seconds so far')
+    status = {"sql": status_sql,
+              "csv": status_csv}
+
+    return status
 
 
 # Set up dataframe

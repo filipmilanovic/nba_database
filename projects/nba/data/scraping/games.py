@@ -4,6 +4,12 @@ from projects.nba import *  # import all project specific utils
 from projects.nba.data.scraping import *
 
 
+def game_index(game_date, name):
+    short_date = pd.to_datetime(game_date).strftime('%Y%m%d')
+    short_name = Team.team_ids[Team.names.index(name)]
+    return short_date + '0' + short_name
+
+
 def scrape_games(game_date, driver, df):
     # grab all game information and load into daily table
     hteams = driver.find_elements_by_xpath(
@@ -16,10 +22,11 @@ def scrape_games(game_date, driver, df):
         "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[2]")
     # there is a loose game_summary on every page that returns an empty result
     for j in range(len(hteams)):
+        df.loc[j, 'game_id'] = game_index(game_date.strftime('%Y-%m-%d'), hteams[j].text)
         df.loc[j, 'date'] = str(game_date.strftime('%Y-%m-%d'))
-        df.loc[j, 'home_team'] = hteams[j].text
+        df.loc[j, 'home_team'] = Team.team_ids[Team.names.index(hteams[j].text)]
         df.loc[j, 'home_score'] = hscore[j].text
-        df.loc[j, 'away_team'] = ateams[j].text
+        df.loc[j, 'away_team'] = Team.team_ids[Team.names.index(ateams[j].text)]
         df.loc[j, 'away_score'] = ascore[j].text
 
 
@@ -42,17 +49,31 @@ def get_games_data(df, dates):
         # scrape the daily data
         scrape_games(dates[i], driver, daily)
 
+        # remove re-scraped data
+        df = df.loc[df.date != i]
+
         # append daily data to games, and remove any duplicates
         df = pd.concat([df, daily]).drop_duplicates().reset_index(drop=True)
 
-        write_data(df=df,
-                   name='games',
-                   to_csv=True,
-                   sql_engine=engine,
-                   db_schema='nba',
-                   if_exists='replace',
-                   iteration=dates[i].strftime('%Y-%m-%d'))
+        status = write_data(df=df,
+                            name='games',
+                            to_csv=True,
+                            sql_engine=engine,
+                            db_schema='nba',
+                            if_exists='replace',
+                            index=False)
 
+        progress(iteration=i,
+                 iterations=len(dates),
+                 iteration_name=dates[i].strftime('%Y-%m-%d'),
+                 lapsed=time_lapsed(),
+                 sql_status=status['sql'],
+                 csv_status=status['csv'])
+
+    # return to regular output writing
+    sys.stdout.write('\n')
+
+    # close web driver
     driver.close()
 
     print(Colour.green + 'Game Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
@@ -61,7 +82,7 @@ def get_games_data(df, dates):
 
 if __name__ == '__main__':
     # column names for games table
-    columns = ['date', 'home_team', 'home_score', 'away_team', 'away_score']
+    columns = ['game_id', 'date', 'home_team', 'home_score', 'away_team', 'away_score']
 
     # get games dataframe from DB, or build from scratch
     games = initialise_df(table_name='games',
@@ -72,7 +93,7 @@ if __name__ == '__main__':
     # pick up date range from parameters
     date_range = pd.date_range(start_date_games, end_date_games)
 
-    # skip already scraped days
+    # skip or re-attempt already scraped days
     if SKIP_SCRAPED_DAYS:
         date_range = date_range[~date_range.isin(games.date)]
 

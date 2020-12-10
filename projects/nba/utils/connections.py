@@ -22,5 +22,3 @@ try:
     print(Colour.green + 'Established SQL connection to nba_raw schema' + Colour.end)
 except sql.exc.OperationalError:
     print(Colour.red + "Couldn't establish SQL connection" + Colour.end)
-
-# if __name__ == '__main__':

@@ -4,9 +4,9 @@ from datetime import date
 # For game data scraping dates
 start_date_games = date(2016, 7, 1)
 end_date_games = date(2019, 6, 30)
-start_date_plays = date(2017, 7, 1)
+start_date_plays = date(2016, 7, 1)
 end_date_plays = date(2019, 6, 30)
-SKIP_SCRAPED_DAYS = True
+SKIP_SCRAPED_DAYS = False
 
 # Loading method (csv or sql)
 LOAD_METHOD = 'sql'
