@@ -5,13 +5,13 @@
 class Team:
     instances = []
     team_ids = []
-    names = []
+    short_names = []
     full_names = []
     coordinates = []
 
     def __init__(self,
                  team_id,
-                 name,
+                 short_name,
                  full_name,
                  coordinates):
         self.__class__.instances.append(self)
@@ -19,8 +19,8 @@ class Team:
         self.team_id = team_id
         self.__class__.team_ids.append(team_id)
 
-        self.name = name
-        self.__class__.names.append(name)
+        self.short_name = short_name
+        self.__class__.short_names.append(short_name)
 
         self.full_name = full_name
         self.__class__.full_names.append(full_name)
@@ -31,7 +31,7 @@ class Team:
     def to_dict(self):
         return {
             'team_id': self.team_id,
-            'name': self.name,
+            'short_name': self.short_name,
             'full_name': self.full_name,
             'coordinates': self.coordinates
         }

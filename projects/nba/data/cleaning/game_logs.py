@@ -1,4 +1,4 @@
-from projects.nba import *  # import all project specific utils
+from modelling.projects.nba import *  # import all project specific utils
 
 if LOAD_METHOD == 'sql':
     games = pd.read_sql(sql=sql.select([games_sql]), con=engine, index_col='index')

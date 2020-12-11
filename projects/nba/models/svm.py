@@ -1,4 +1,4 @@
-from projects.nba.utils.functions import *
+from modelling.projects.nba.utils.functions import *
 
 gamedata = pd.read_csv(p+'/data/output/gamedata.csv')
 

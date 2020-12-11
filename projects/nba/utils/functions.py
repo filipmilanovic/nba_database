@@ -1,8 +1,8 @@
 # DEFINING FUNCTIONS FOR USE IN PROJECT
 
-from projects.nba.utils.colours import *
-from projects.nba.utils.connections import *
-from projects.nba.utils.path import *
+from modelling.projects.nba.utils.colours import *
+from modelling.projects.nba.utils.connections import *
+from modelling.projects.nba.utils.path import *
 import pandas as pd
 import sqlalchemy as sql
 import sys

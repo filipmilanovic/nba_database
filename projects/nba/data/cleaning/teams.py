@@ -1,5 +1,5 @@
 # CONVERTING TEAMS TO DATAFRAME
-from projects.nba import *
+from modelling.projects.nba import *
 
 if __name__ == '__main__':
     # Get teams from class objects

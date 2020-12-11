@@ -1,6 +1,6 @@
 # SCRAPING PLAY BY PLAY DATA
-from projects.nba import *  # import all project specific utils
-from projects.nba.data.scraping import *
+from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.data.scraping import *
 
 
 def get_game_ref(df):

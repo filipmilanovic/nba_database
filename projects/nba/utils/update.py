@@ -1,12 +1,12 @@
 # PROJECT CONTROLS
 
 # Load raw data
-from projects.nba.data.scraping import games
-# from projects.nba.data.scraping import teams
-# from projects.nba.data.scraping import plays
+from modelling.projects.nba.data.scraping import games
+# from modelling.projects.nba.data.scraping import teams
+# from modelling.projects.nba.data.scraping import plays
 
 # Create game_logs
-# from projects.nba.data import game_logs
+# from modelling.projects.nba.data import game_logs
 
 # Load daily data
 # from data import odds

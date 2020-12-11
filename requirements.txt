@@ -1,4 +1,6 @@
-pandas==1.1.4
+pandas==1.1.5
+numpy==1.19.3
 sqlalchemy==1.3.20
 selenium==3.141.0
 bs4==0.0.1
+mysqlclient==2.0.2

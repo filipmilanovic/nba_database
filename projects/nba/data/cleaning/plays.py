@@ -1,5 +1,5 @@
-from projects.nba import *  # import all project specific utils
-from projects.nba.data.cleaning import *
+from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.data.cleaning import *
 
 plays_raw = load_data(df='plays_raw',
                       sql_engine=engine_raw,

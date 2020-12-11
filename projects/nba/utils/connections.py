@@ -1,6 +1,6 @@
 # SETTING UP SQL CONNECTIONS
-from projects.nba.utils.colours import *
-from projects.nba.utils.environment import *
+from modelling.projects.nba.utils.colours import *
+from modelling.projects.nba.utils.environment import *
 import sqlalchemy as sql
 
 

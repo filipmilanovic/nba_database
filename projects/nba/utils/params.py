@@ -6,7 +6,7 @@ start_date_games = date(2016, 7, 1)
 end_date_games = date(2019, 6, 30)
 start_date_plays = date(2016, 7, 1)
 end_date_plays = date(2019, 6, 30)
-SKIP_SCRAPED_DAYS = False
+SKIP_SCRAPED_DAYS = True
 
 # Loading method (csv or sql)
 LOAD_METHOD = 'sql'
