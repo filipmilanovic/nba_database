@@ -1,111 +1,175 @@
-### SCRAPING ODDS DATA FROM ODDSPORTAL ###
-## http://www.oddsportal.com/basketball/usa/nba/results/
+# SCRAPING ODDS DATA
 
-# load game data to have comparison of games available
-game_data = pd.read_csv(p+'/data/output/gamedata_raw.csv')
-game_data['DATE'] = pd.to_datetime(game_data['DATE'])
-game_data['DATE'] = game_data['DATE'].dt.strftime('%d %b %Y')
+from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.data.scraping import *
 
-# temporary fix for cancelled Celtics Pacers game
-game_data.loc[(game_data['DATE'] == '17 Apr 2013') & (game_data['HOME_TEAM'] == 'Celtics'), 'HOME_SCORE'] = 0
-game_data.loc[(game_data['DATE'] == '17 Apr 2013') & (game_data['HOME_TEAM'] == 'Celtics'), 'AWAY_SCORE'] = 0
 
-# set column names
-game_data = game_data[pd.notnull(game_data['HOME_TEAM'])]
-game_data = game_data[pd.notnull(game_data['HOME_SCORE'])]
-game_data = game_data[pd.notnull(game_data['AWAY_TEAM'])]
-game_data = game_data[pd.notnull(game_data['AWAY_SCORE'])]
+# Get game date for game_id
+def get_date(x):
+    try:
+        formatted_date = dt.strptime(x, '%d %b %Y')
+        output = formatted_date.strftime('%Y%m%d')
+    except ValueError:
+        output = None
+    return output
 
-# Set start time for calculating time lapsed
-start_time = time.time()
 
-# load selenium driver
-driver = webdriver.Chrome(executable_path="/utils/chromedriver.exe")
+# Convert scraped date to Western US Time (note that odds portal timezone selection is unreliable)
+def convert_date(df_1, df_2, x):
+    try:
+        formatted_datetime = dt.strptime(df_2[x] + left(df_1[x], 5), '%Y%m%d%H:%M')
+        default_timezone = pytz.timezone("Etc/GMT")
+        target_timezone = pytz.timezone("US/Pacific")
+        updated_datetime = default_timezone.localize(formatted_datetime).astimezone(target_timezone)
+        output = updated_datetime.strftime('%Y%m%d')
+    except ValueError:
+        output = None
+    return output
 
-# onnect to website
-driver.get("http://www.oddsportal.com/basketball/usa/nba/results/#/")
 
-# try:
-#    timezone = driver.find_element_by_xpath("//*[@id='col-content']/div[1]/ul/li/div/a")
-#    time.sleep(2)
-#    timezone.click()
-# except Exception:
-#    pass
+# Get short team name for game_id
+def get_short_name(x):
+    try:
+        output = Team.team_ids[Team.full_names.index(mid(x, 5, x.find('-') - 6))]
+    except ValueError:
+        output = None
+    return output
 
-# set timezone to US EST
-try:
-    timezone = driver.find_element_by_xpath("//*[@id='user-header-timezone-expander']")
-    timezone.click()
-    time.sleep(2)
-    us_timezone = driver.find_element_by_xpath("//*[@id='timezone-content']/a[69]")
-    us_timezone.click()
-except Exception:
-    pass
 
-# set up basic dataframe if initialising for first time
-oddsdata = pd.DataFrame(columns=['DATE', 'TEAMS', 'SCORE', 'HOME_ODDS', 'AWAY_ODDS'])
+# Get odds for home team
+def get_home_odds(df, scores, x):
+    try:
+        odds_data = right(df[x], len(df[x]) - df[x].find(scores[x]) - len(scores[x]))
+        output = left(odds_data, odds_data.find('.') + 3)
+    except TypeError:
+        output = None
+    return output
 
-# load existing data if available
-odds_data = pd.read_csv(p+'/data/output/oddsdata.csv')
-del odds_data['Unnamed: 0']
-odds_data = odds_data[odds_data['DATE'] != 'Remove']
 
-odds_data = odds_data[(pd.to_datetime(odds_data.DATE) <= pd.to_datetime(date_start_odds)) |
-                      (pd.to_datetime(odds_data.DATE) >= pd.to_datetime(date_end_odds))]
+# Get odds for away team
+def get_away_odds(df, scores, x):
+    try:
+        odds_data = right(df[x], len(df[x]) - df[x].find(scores[x]) - len(scores[x]))
+        home_odds = left(odds_data, odds_data.find('.') + 3)
+        trimmed_odds_data = right(odds_data, len(odds_data) - len(home_odds))
+        output = left(trimmed_odds_data, trimmed_odds_data.find('.') + 3)
+    except TypeError:
+        output = None
+    return output
 
-# set up date range
-for i in range(start_season_odds, end_season_odds):  # @UnresolvedImport
-    year = driver.find_element_by_partial_link_text(str(i-1) + '/' + str(i))
-    year.click()
-    for j in range(30):
-        time.sleep(2)
-        dates = driver.find_elements_by_css_selector(".center.nob-border")
-        page_data = pd.DataFrame(columns=['DAY', 'GAMES'])
-        for k in range(len(dates)):
-            page_data.loc[k, 'DAY'] = dates[k].text
-            page_data.loc[k, 'DAY'] = page_data.loc[k, 'DAY'].replace('Today, ', '')
-            page_data.loc[k, 'DAY'] = page_data.loc[k, 'DAY'].replace('Yesterday, ', '')
-            if page_data.loc[k, 'DAY'].find('All Stars') > 0:
-                page_data.loc[k, 'DAY'] = 'Remove'
-                page_data.loc[page_data['DAY'] == 'Remove', 'GAMES'] = 1
-            else:
-                try:  # This exception is for 29 Feb cases
-                    page_data.loc[k, 'DAY'] = datetime.strptime(page_data.loc[k, 'DAY'][0:6], '%d %b')
-                    if page_data.loc[k, 'DAY'].month <= 7:
-                        page_data.loc[k, 'DAY'] = date(i, page_data.loc[k, 'DAY'].month, page_data.loc[k, 'DAY'].day)
-                    else:
-                        page_data.loc[k, 'DAY'] = date(i-1, page_data.loc[k, 'DAY'].month, page_data.loc[k, 'DAY'].day)
-                except Exception:
-                    page_data.loc[k, 'DAY'] = date(i, 2, 29)
-                page_data.loc[k, 'DAY'] = str(page_data.loc[k, 'DAY'].strftime('%d %b %Y'))
-                page_data.loc[k, 'GAMES'] = len(game_data.loc[game_data['DATE'] == str(page_data.loc[k, 'DAY']), 'DATE'])-\
-                                                len(odds_data.loc[odds_data['DATE'] == str(page_data.loc[k ,'DAY']), 'DATE'])
-        for l in range(len(dates)):
-            daily = pd.DataFrame(columns=['DATE', 'TEAMS', 'HOME_TEAM', 'AWAY_TEAM', 'SCORE', 'HOME_ODDS', 'AWAY_ODDS'])
-            games_low = sum(page_data.loc[0:l, 'GAMES']) - page_data.loc[l, 'GAMES']
-            print(games_low)
-            games = page_data.loc[l, 'GAMES']
-            for m in range(games_low, games_low + games):
-                iter = 4+2*l+m
-                try:
-                    teams_path = "//*[@id='tournamentTable']/table/tbody/tr[{0}]/td[2]".format(iter)
-                    teams = driver.find_element_by_xpath(teams_path)
-                    score_path = "//*[@id='tournamentTable']/table/tbody/tr[{0}]/td[3]".format(iter)
-                    score = driver.find_element_by_xpath(score_path)
-                    home_path = "//*[@id='tournamentTable']/table/tbody/tr[{0}]/td[4]".format(iter)
-                    home_odds = driver.find_element_by_xpath(home_path)
-                    away_path = "//*[@id='tournamentTable']/table/tbody/tr[{0}]/td[5]".format(iter)
-                    away_odds = driver.find_element_by_xpath(away_path)
-                    daily.loc[m] = [page_data.loc[l, 'DAY'], teams.text, '', '', score.text, home_odds.text, away_odds.text]
-                    daily.loc[m, 'HOME_TEAM'] = re.split(' - ', str(daily.loc[m, 'TEAMS']))[0]
-                    daily.loc[m, 'AWAY_TEAM'] = re.split(' - ', str(daily.loc[m, 'TEAMS']))[1]
-                except Exception:
-                    pass
-            print(page_data.loc[l, 'DAY'] + ' ' + str(time.time() - start_time) + ' ' + str(games))
-            odds_data = odds_data.append(daily)
-            del odds_data['TEAMS']
-            odds_data.to_csv(p+'/data/output/oddsdata.csv')
-        next = driver.find_element_by_xpath("//*[@id='pagination']/a[13]/span")
-        next.click()
-driver.close()
-print('Odds Loaded ' + str(time.time() - start_time))
+
+def get_max_page_number(driver):
+    page_parent = driver.find_element_by_id("pagination")
+    page_list = page_parent.find_elements_by_css_selector("*")
+    pages = [x.get_attribute("href") for x in page_list if x.get_attribute("href")]
+    page_numbers = [int(right(x, 3).replace('/', '')) for x in pages if right(x, 2) != "#/"]
+    output = max(page_numbers)
+    return output
+
+
+def get_odds_data(seasons):
+    # selenium driver
+    driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
+                              options=options)
+
+    for i in seasons:
+        # go to season page
+        driver.get(f'https://www.oddsportal.com/basketball/usa/nba-{i-1}-{i}/results/')
+
+        # clear rows where game already exists
+        try:
+            connection_raw.execute(f'delete from nba.odds where left(game_id, 8)*1 <= "{i}0630"'
+                                   f'and left(game_id, 8)*1 >= {i-1}0701')
+        except sql.exc.ProgrammingError:
+            pass
+
+        get_season_data(driver, i)
+
+    driver.close()
+
+    # return to regular output writing
+    sys.stdout.write('\n')
+
+    print(Colour.green + 'Odds Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+          + ' seconds taken' + Colour.end)
+
+
+def get_season_data(driver, season):
+    page_number = 1
+    max_page_number = get_max_page_number(driver)
+    while True:
+        try:
+            # initialise df
+            odds = pd.DataFrame(columns=columns)
+
+            # grab html data
+            soup = BeautifulSoup(driver.page_source, 'html.parser')
+
+            # set type of rows to be scraped (Date and game data)
+            rows = ['center nob-border', 'odd deactivate', 'deactivate']
+
+            # get raw text from html
+            odds_raw = [x.getText() for x in soup.find_all('tr', {'class': rows})]
+
+            # remove OT indicator
+            odds_raw = pd.Series(odds_raw).str.replace('\sOT', '')
+
+            # set a date for each row, then convert to Western US timezone
+            odds_date_gmt = pd.Series([get_date(left(x, 11)) for x in odds_raw]).fillna(method='ffill')
+            odds_date = [convert_date(odds_raw, odds_date_gmt, i) for i in range(len(odds_raw))]
+
+            # get short name for home team for game_id
+            short_names = [get_short_name(x) if mid(x, 2, 1) == ':' else None for x in odds_raw]
+
+            # get game_id
+            odds.game_id = pd.Series(odds_date) + '0' + pd.Series(short_names)
+
+            # get game scores to help scrape from raw text
+            home_scores = odds.game_id.map(games.set_index('game_id')['home_score'])
+            away_scores = odds.game_id.map(games.set_index('game_id')['away_score'])
+            scores = home_scores + ':' + away_scores
+
+            # get odds
+            odds.home_odds = [get_home_odds(odds_raw, scores, x) for x in range(len(odds_raw))]
+            odds.away_odds = [get_away_odds(odds_raw, scores, x) for x in range(len(odds_raw))]
+
+            # drop rows where no game information exists
+            odds = odds[odds['home_odds'].notna()]
+
+            odds.home_odds = pd.to_numeric(odds.home_odds)
+            odds.away_odds = pd.to_numeric(odds.away_odds)
+
+            status = write_data(df=odds,
+                                name='odds',
+                                to_csv=False,
+                                sql_engine=engine,
+                                db_schema='nba',
+                                if_exists='append',
+                                index=False)
+
+            progress(iteration=page_number-1,
+                     iterations=max_page_number,
+                     iteration_name=str(season) + ' Season',
+                     lapsed=time_lapsed(),
+                     sql_status=status['sql'],
+                     csv_status=status['csv'])
+
+            page_number += 1
+
+            driver.find_element_by_xpath(f"//span[text()='{page_number}']").click()
+            time.sleep(1)
+        except NoSuchElementException:
+            break
+
+
+if __name__ == '__main__':
+    # Load games
+    games = load_data(df='games',
+                      sql_engine=engine,
+                      meta=metadata)
+
+    columns = ['game_id', 'home_odds', 'away_odds']
+
+    season_range = range(start_season_odds, end_season_odds + 1)
+
+    get_odds_data(season_range)
