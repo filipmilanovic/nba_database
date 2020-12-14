@@ -50,7 +50,10 @@ def get_games_data(dates):
         scrape_games(dates[i], driver, daily)
 
         # clear rows where game already exists
-        connection_raw.execute(f'delete from nba.games where date = "{dates[i].date()}"')
+        try:
+            connection_raw.execute(f'delete from nba.games where date = "{dates[i].date()}"')
+        except sql.exc.ProgrammingError:
+            pass
 
         status = write_data(df=daily,
                             name='games',

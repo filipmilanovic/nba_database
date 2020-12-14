@@ -30,8 +30,11 @@ def get_plays_data(iterations):
         game_plays = pd.DataFrame(game_plays, columns=['plays'])
         game_plays['game_ref'] = iterations[i]
 
-        # clear rows where game already exists
-        connection_raw.execute(f'delete from nba_raw.plays_raw where game_ref = "{iterations[i]}"')
+        # clear rows where play data already exists
+        try:
+            connection_raw.execute(f'delete from nba_raw.plays_raw where game_ref = "{iterations[i]}"')
+        except sql.exc.ProgrammingError:
+            pass
 
         status = write_data(df=game_plays,
                             name='plays_raw',
