@@ -2,7 +2,7 @@
 from datetime import date
 
 # Dates for table games
-start_date_games = date(2016, 12, 1)
+start_date_games = date(2016, 7, 1)
 end_date_games = date(2019, 6, 30)
 
 # Dates for table plays
