@@ -4,8 +4,29 @@ from modelling.projects.nba import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
 
+def get_max_page_number(driver):
+    page_parent = driver.find_element_by_id("pagination")
+    page_list = page_parent.find_elements_by_css_selector("*")
+    pages = [x.get_attribute("href") for x in page_list if x.get_attribute("href")]
+    page_numbers = [int(right(x, 3).replace('/', '')) for x in pages if right(x, 2) != "#/"]
+    output = max(page_numbers)
+    return output
+
+
+def get_raw_rows(driver):
+    # grab html data
+    soup = BeautifulSoup(driver.page_source, 'html.parser')
+
+    # set type of rows to be scraped (Date and game data)
+    rows = ['center nob-border', 'odd deactivate', 'deactivate']
+
+    # get raw text from html
+    output = [x.getText() for x in soup.find_all('tr', {'class': rows})]
+    return output
+
+
 # Get game date for game_id
-def get_date(x):
+def get_raw_date(x):
     try:
         formatted_date = dt.strptime(x, '%d %b %Y')
         output = formatted_date.strftime('%Y%m%d')
@@ -36,6 +57,22 @@ def get_short_name(x):
     return output
 
 
+def get_game_id(raw_df, dates):
+    # get short name for home team for game_id
+    short_names = [get_short_name(x) if mid(x, 2, 1) == ':' else None for x in raw_df]
+
+    # get game_id
+    output = pd.Series(dates) + '0' + pd.Series(short_names)
+    return output
+
+
+def get_scores(df):
+    home_scores = df.game_id.map(games.set_index('game_id')['home_score'])
+    away_scores = df.game_id.map(games.set_index('game_id')['away_score'])
+    output = home_scores + ':' + away_scores
+    return output
+
+
 # Get odds for home team
 def get_home_odds(df, scores, x):
     try:
@@ -55,15 +92,6 @@ def get_away_odds(df, scores, x):
         output = left(trimmed_odds_data, trimmed_odds_data.find('.') + 3)
     except TypeError:
         output = None
-    return output
-
-
-def get_max_page_number(driver):
-    page_parent = driver.find_element_by_id("pagination")
-    page_list = page_parent.find_elements_by_css_selector("*")
-    pages = [x.get_attribute("href") for x in page_list if x.get_attribute("href")]
-    page_numbers = [int(right(x, 3).replace('/', '')) for x in pages if right(x, 2) != "#/"]
-    output = max(page_numbers)
     return output
 
 
@@ -102,32 +130,21 @@ def get_season_data(driver, season):
             # initialise df
             odds = pd.DataFrame(columns=columns)
 
-            # grab html data
-            soup = BeautifulSoup(driver.page_source, 'html.parser')
-
-            # set type of rows to be scraped (Date and game data)
-            rows = ['center nob-border', 'odd deactivate', 'deactivate']
-
-            # get raw text from html
-            odds_raw = [x.getText() for x in soup.find_all('tr', {'class': rows})]
+            # get raw rows
+            odds_raw = get_raw_rows(driver)
 
             # remove OT indicator
             odds_raw = pd.Series(odds_raw).str.replace('\sOT', '')
 
             # set a date for each row, then convert to Western US timezone
-            odds_date_gmt = pd.Series([get_date(left(x, 11)) for x in odds_raw]).fillna(method='ffill')
+            odds_date_gmt = pd.Series([get_raw_date(left(x, 11)) for x in odds_raw]).fillna(method='ffill')
             odds_date = [convert_date(odds_raw, odds_date_gmt, i) for i in range(len(odds_raw))]
 
-            # get short name for home team for game_id
-            short_names = [get_short_name(x) if mid(x, 2, 1) == ':' else None for x in odds_raw]
-
-            # get game_id
-            odds.game_id = pd.Series(odds_date) + '0' + pd.Series(short_names)
+            # get game_ids
+            odds.game_id = get_game_id(odds_raw, odds_date)
 
             # get game scores to help scrape from raw text
-            home_scores = odds.game_id.map(games.set_index('game_id')['home_score'])
-            away_scores = odds.game_id.map(games.set_index('game_id')['away_score'])
-            scores = home_scores + ':' + away_scores
+            scores = get_scores(odds)
 
             # get odds
             odds.home_odds = [get_home_odds(odds_raw, scores, x) for x in range(len(odds_raw))]
