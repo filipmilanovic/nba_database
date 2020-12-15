@@ -6,28 +6,52 @@ from modelling.projects.nba.data.scraping import *
 
 def game_index(game_date, name):
     short_date = pd.to_datetime(game_date).strftime('%Y%m%d')
-    short_name = Team.team_ids[Team.short_names.index(name)]
-    return short_date + '0' + short_name
+    return short_date + '0' + name
+
+
+def get_daily_games(driver):
+    output = driver.find_elements_by_xpath(
+        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[1]/a")
+    return output
+
+
+def get_home_team(driver, i):
+    home_team = driver.find_elements_by_xpath(
+        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[1]/a")
+    output = Team.team_ids[Team.short_names.index(home_team[i].text)]
+    return output
+
+
+def get_home_score(driver, i):
+    home_score = driver.find_elements_by_xpath(
+        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[2]")
+    output = home_score[i].text
+    return output
+
+
+def get_away_team(driver, i):
+    away_team = driver.find_elements_by_xpath(
+        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[1]/a")
+    output = Team.team_ids[Team.short_names.index(away_team[i].text)]
+    return output
+
+
+def get_away_score(driver, i):
+    away_score = driver.find_elements_by_xpath(
+        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[2]")
+    output = away_score[i].text
+    return output
 
 
 def scrape_games(game_date, driver, df):
-    # grab all game information and load into daily table
-    hteams = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[1]/a")
-    hscore = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[2]")
-    ateams = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[1]/a")
-    ascore = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[2]")
-    # there is a loose game_summary on every page that returns an empty result
-    for j in range(len(hteams)):
-        df.loc[j, 'game_id'] = game_index(game_date.strftime('%Y-%m-%d'), hteams[j].text)
-        df.loc[j, 'date'] = str(game_date.strftime('%Y-%m-%d'))
-        df.loc[j, 'home_team'] = Team.team_ids[Team.short_names.index(hteams[j].text)]
-        df.loc[j, 'home_score'] = hscore[j].text
-        df.loc[j, 'away_team'] = Team.team_ids[Team.short_names.index(ateams[j].text)]
-        df.loc[j, 'away_score'] = ascore[j].text
+    daily_games = get_daily_games(driver)
+    for i in range(len(daily_games)):
+        df.loc[i, 'game_id'] = game_index(game_date.strftime('%Y-%m-%d'), get_home_team(driver, i))
+        df.loc[i, 'date'] = str(game_date.strftime('%Y-%m-%d'))
+        df.loc[i, 'home_team'] = get_home_team(driver, i)
+        df.loc[i, 'home_score'] = get_home_score(driver, i)
+        df.loc[i, 'away_team'] = get_away_team(driver, i)
+        df.loc[i, 'away_score'] = get_away_score(driver, i)
 
 
 def get_games_data(dates):
