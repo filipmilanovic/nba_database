@@ -2,6 +2,7 @@
 from modelling.projects.nba.utils.colours import *
 from modelling.projects.nba.utils.environment import *
 import sqlalchemy as sql
+from sqlalchemy.exc import ProgrammingError
 
 
 # Set up MySQL Connections

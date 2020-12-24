@@ -33,7 +33,7 @@ def get_plays_data(iterations):
         # clear rows where play data already exists
         try:
             connection_raw.execute(f'delete from nba_raw.plays_raw where game_ref = "{iterations[i]}"')
-        except sql.exc.ProgrammingError:
+        except ProgrammingError:
             pass
 
         status = write_data(df=game_plays,
@@ -50,6 +50,9 @@ def get_plays_data(iterations):
                  lapsed=time_lapsed(),
                  sql_status=status['sql'],
                  csv_status=status['csv'])
+
+    # return to regular output writing
+    sys.stdout.write('\n')
 
     driver.close()
 
@@ -73,7 +76,7 @@ if __name__ == '__main__':
     date_range = pd.date_range(start_date_plays, end_date_plays)
 
     # load games in selected date range
-    games = games.loc[games.date.isin(date_range.strftime('%Y-%m-%d'))]
+    games = games.loc[games.date.isin(date_range.strftime('%Y-%m-%d'))].reset_index()
 
     # create game index for accessing website
     game_ref = get_game_ref(games)

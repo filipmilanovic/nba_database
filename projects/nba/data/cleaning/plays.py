@@ -1,3 +1,4 @@
+# CLEAN RAW PLAYS DATA
 from modelling.projects.nba import *  # import all project specific utils
 
 
@@ -410,7 +411,7 @@ def get_game_plays(x):
         # clear rows where game already exists
         try:
             connection_raw.execute(f'delete from nba.plays where game_id = "{x[i]}"')
-        except sql.exc.ProgrammingError:
+        except ProgrammingError:
             pass
 
         status = write_data(df=output,
