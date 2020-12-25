@@ -20,12 +20,32 @@ def get_raw_plays(game_id):
     return output
 
 
+def remove_line_break(x):
+    output = re.sub(r'\n', '', x)
+    return output
+
+
+def remove_score_added(x):
+    output = re.sub(r'(\+[0-9])', '', x)
+    return output
+
+
+def remove_score(x):
+    output = re.sub(r'\d+(-)+\d+', '', x)
+    return output
+
+
+def remove_time(x):
+    output = re.sub(r'\d+:\d+\.\d', '', x)
+    return output
+
+
 # clean the raw play text to just show the play
 def get_play(x):
-    play_no_line_break = right(x, len(x) - (x.find('\n') + 1))
-    play_no_add = re.sub(r'(\+[0-9])', '', play_no_line_break)
-    play_no_score = re.sub(r'\d+(-)+\d+', '', play_no_add)
-    play = re.sub(r'\d+:\d+\.\d\n', '', play_no_score)
+    play_no_line_break = remove_line_break(x)
+    play_no_score_added = remove_score_added(play_no_line_break)
+    play_no_score = remove_score(play_no_score_added)
+    play = remove_time(play_no_score)
     output = play.strip()
     return output
 
@@ -56,14 +76,14 @@ def get_time(x):
 
 # find team_id based on the location of the actual play to the score in the raw text line
 def get_team_id(x, game_id, reverse=False):
-    play_no_line_break = re.sub(r'\n', '', x)
-    play_no_add = re.sub(r'(\+[0-9])', '', play_no_line_break)
-    play_no_time = re.sub(r'\d+:\d+\.\d\n', '', play_no_add)
+    play_no_line_break = remove_line_break(x)
+    play_no_score_added = remove_score_added(play_no_line_break)
+    play_no_time = remove_time(play_no_score_added)
     play = play_no_time.strip()
     score = re.search(r'\d+(-)+\d+', play).group(0)
     if len(re.search(f'{score}(.*)', play).group(1)) > 1:
         output = games.home_team[games.game_id == game_id].item()
-        # in some cases (some fouls, steals, blocks), the play appears on the 'wrong' side
+        # in some cases (steals, blocks, some fouls), the play appears on the 'wrong' side
         if reverse:
             output = games.away_team[games.game_id == game_id].item()
     else:
