@@ -150,7 +150,7 @@ def get_player_data(array, driver):
         try:
             connection_raw.execute(f'delete from nba.players where player_id = "{df.player_id.item()}"')
         except ProgrammingError:
-            break
+            pass
 
         status = write_data(df=df,
                             name='players',
