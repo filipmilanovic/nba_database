@@ -31,7 +31,10 @@ def scrape_plays(driver):
     # scrape second player_id
     player_2 = [get_player_id(x, 1) for x in soup.find_all('tr')
                 if x.get('data-row') is not None]
-    output = list(zip(plays, player_1, player_2))
+    # scrape third player_id
+    player_3 = [get_player_id(x, 2) for x in soup.find_all('tr')
+                if x.get('data-row') is not None]
+    output = list(zip(plays, player_1, player_2, player_3))
     return output
 
 
@@ -46,7 +49,7 @@ def get_plays_data(iterations):
 
         game_plays = scrape_plays(driver)
 
-        game_plays = pd.DataFrame(game_plays, columns=['plays', 'player_1', 'player_2'])
+        game_plays = pd.DataFrame(game_plays, columns=['plays', 'player_1', 'player_2', 'player_3'])
         game_plays['game_id'] = iterations[i]
 
         # clear rows where play data already exists
@@ -78,7 +81,7 @@ def get_plays_data(iterations):
 
 if __name__ == '__main__':
     # column names for plays_raw table
-    columns = ['plays', 'player_1', 'player_2', 'game_id']
+    columns = ['plays', 'player_1', 'player_2', 'player_3', 'game_id']
 
     # get plays_raw dataframe from DB, or build from scratch
     plays_raw = initialise_df(table_name='plays_raw',

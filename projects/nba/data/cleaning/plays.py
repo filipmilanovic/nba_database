@@ -2,50 +2,38 @@
 from modelling.projects.nba import *  # import all project specific utils
 
 
-def cleanup_unneeded_rows(df):
-    # remove table header
-    df = df[~(df.plays.str.contains('Time') & df.plays.str.contains('Score'))]
-
-    # remove header for each quarter
-    df = df[~df.plays.str.contains(' Q')]
-
-    output = df.reset_index()
-    return output
-
-
 # get the plays for specified game
 def get_raw_plays(game_id):
-    df = plays_raw.loc[plays_raw.game_id == game_id]
-    output = cleanup_unneeded_rows(df)
+    output = plays_raw.loc[plays_raw.game_id == game_id].reset_index()
     return output
 
 
-def remove_line_break(x):
+def play_remove_line_break(x):
     output = re.sub(r'\n', '', x)
     return output
 
 
-def remove_score_added(x):
+def play_remove_score_added(x):
     output = re.sub(r'(\+[0-9])', '', x)
     return output
 
 
-def remove_score(x):
+def play_remove_score(x):
     output = re.sub(r'\d+(-)+\d+', '', x)
     return output
 
 
-def remove_time(x):
+def play_remove_time(x):
     output = re.sub(r'\d+:\d+\.\d', '', x)
     return output
 
 
 # clean the raw play text to just show the play
 def get_play(x):
-    play_no_line_break = remove_line_break(x)
-    play_no_score_added = remove_score_added(play_no_line_break)
-    play_no_score = remove_score(play_no_score_added)
-    play = remove_time(play_no_score)
+    play_no_line_break = play_remove_line_break(x)
+    play_no_score_added = play_remove_score_added(play_no_line_break)
+    play_no_score = play_remove_score(play_no_score_added)
+    play = play_remove_time(play_no_score)
     output = play.strip()
     return output
 
@@ -67,18 +55,42 @@ def get_time(x):
     return output
 
 
-# def get_score(x):
-#     x = x.reset_index()
-#     x[0] = '0-0'
-#     for i in range(len(x)):
-#
+def get_home_score(x):
+    output = int(re.search('(\d+)-', x).group(1))
+    return output
+
+
+def get_away_score(x):
+    output = int(re.search('-(\d+)', x).group(1))
+    return output
+
+
+def get_score(x):
+    game_id = list(set(x.game_id))[0]
+    home_team = games.home_team[games.game_id == game_id].item()
+    away_team = games.away_team[games.game_id == game_id].item()
+    output = []
+    for i in range(len(x)):
+        try:
+            last_home_score = get_home_score(output[i-1])
+            last_away_score = get_away_score(output[i-1])
+        except IndexError:
+            last_home_score = 0
+            last_away_score = 0
+        if ' Make' in x.event[i]:
+            home_score = last_home_score + int(x.event_value[i]) * (x.team_id[i] == home_team) * 1
+            away_score = last_away_score + int(x.event_value[i]) * (x.team_id[i] == away_team) * 1
+            output.append(str(home_score) + '-' + str(away_score))
+        else:
+            output.append(str(last_home_score) + '-' + str(last_away_score))
+    return output
 
 
 # find team_id based on the location of the actual play to the score in the raw text line
 def get_team_id(x, game_id, reverse=False):
-    play_no_line_break = remove_line_break(x)
-    play_no_score_added = remove_score_added(play_no_line_break)
-    play_no_time = remove_time(play_no_score_added)
+    play_no_line_break = play_remove_line_break(x)
+    play_no_score_added = play_remove_score_added(play_no_line_break)
+    play_no_time = play_remove_time(play_no_score_added)
     play = play_no_time.strip()
     score = re.search(r'\d+(-)+\d+', play).group(0)
     if len(re.search(f'{score}(.*)', play).group(1)) > 1:
@@ -136,17 +148,30 @@ def get_quarter_start(x, game_id):
 
 
 # get data for a jump ball
-def get_jump_ball_data(x, game_id):
+def get_jump_ball_data(x, player_1, player_2, player_3, game_id):
+    # find team that controlled the tip
+    winning_team_id = games_lineups.team_id[(games_lineups.game_id == game_id) &
+                                            (games_lineups.player_id == player_3)].item()
+    # find which player from that team competed for the jump ball
+    winning_team_players = games_lineups.player_id[(games_lineups.game_id == game_id) &
+                                                   (games_lineups.team_id == winning_team_id) &
+                                                   (games_lineups.player_id == player_1)]
+    if len(winning_team_players) > 0:
+        winning_player_id = player_1
+        losing_player_id = player_2
+    else:
+        winning_player_id = player_2
+        losing_player_id = player_1
     play = x
     array = [game_id,  # game_id
              None,  # quarter
              get_time(play),  # time
              None,  # score
-             None,  # team
-             None,  # player_id
+             winning_team_id,  # team
+             winning_player_id,  # player_id
              'Jump Ball',  # event
-             None,  # event_value
-             None,  # event_detail
+             1,  # event_value
+             losing_player_id,  # event_detail
              None  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
@@ -381,21 +406,22 @@ def get_substitution_data(x, player_id, sub_player_id, game_id):
     return output
 
 
-# def get_timeout_data(x, game_id):
-#     play = get_play(x)
-#     array = [game_id,  # game_id
-#              None,  # quarter
-#              get_time(x),  # time
-#              None,  # score
-#              re.search(r'(.*) '),  # team
-#              None,  # player
-#              'Substitution',  # event
-#              1,  # event_value
-#              re.search(r'(.*) enters the game for', play).group(1),  # event_detail
-#              None  # possession
-#              ]
-#     output = pd.DataFrame([array], columns=columns)
-#     return output
+def get_timeout_data(x, game_id):
+    play = get_play(x)
+    detail = re.search(r'(20 second|full|Official) timeout', play).group(1)
+    array = [game_id,  # game_id
+             None,  # quarter
+             get_time(x),  # time
+             None,  # score
+             get_team_id(x, game_id),  # team
+             None,  # player
+             'Timeout',  # event
+             1,  # event_value
+             detail.capitalize(),  # event_detail
+             None  # possession
+             ]
+    output = pd.DataFrame([array], columns=columns)
+    return output
 
 
 def clean_plays(df):
@@ -404,9 +430,10 @@ def clean_plays(df):
         game_id = df.game_id[i]
         if 'Start of ' in df.plays[i]:
             output = output.append(get_quarter_start(df.plays[i], game_id))
-        elif 'Jump ball' in df.plays[i]:
-            output = output.append(get_jump_ball_data(df.plays[i], game_id))
-        elif ' makes ' in df.plays[i] or ' misses ' in df.plays[i]:
+        elif all(x in df.plays[i] for x in ['Jump ball', 'possession']):
+            output = output.append(get_jump_ball_data(df.plays[i], df.player_1[i], df.player_2[i], df.player_3[i],
+                                                      game_id))
+        elif any(x in df.plays[i] for x in [' makes ', ' misses ']):
             output = output.append(get_shot_data(df.plays[i], df.player_1[i], df.player_2[i], game_id))
         elif ' rebound ' in df.plays[i]:
             output = output.append(get_rebound_data(df.plays[i], output.tail(1), df.player_1[i], game_id))
@@ -420,13 +447,16 @@ def clean_plays(df):
             output = output.append(get_violation_data(df.plays[i], df.player_1[i], game_id))
         elif 'enters the game' in df.plays[i]:
             output = output.append(get_substitution_data(df.plays[i], df.player_1[i], df.player_2[i], game_id))
-        # elif 'timeout' in df.plays[i]:
-        #     output = output.append(get_timeout_data(df.plays[i], game_id))
+        elif 'timeout' in df.plays[i]:
+            output = output.append(get_timeout_data(df.plays[i], game_id))
+    output = output
     return output
 
 
 def tidy_game_plays(x):
     x.quarter = x.quarter.fillna(method='ffill')
+    x = x.dropna(axis=0, subset=['event']).reset_index(drop=True)
+    x.score = get_score(x)
     return x
 
 
@@ -459,6 +489,10 @@ def get_game_plays(x):
 
 
 if __name__ == '__main__':
+    plays = load_data(df='plays',
+                      sql_engine=engine,
+                      meta=metadata)
+
     plays_raw = load_data(df='plays_raw',
                           sql_engine=engine_raw,
                           meta=metadata_raw)
@@ -474,5 +508,10 @@ if __name__ == '__main__':
     columns = ['game_id', 'quarter', 'time', 'score',  'team_id', 'player_id',
                'event', 'event_value', 'event_detail', 'possession']
 
-    # get_game_plays(games.game_id)
-    get_game_plays(['201710170CLE'])  # , '201710170GSW'])
+    game_ids = games.game_id
+
+    if SKIP_SCRAPED_DAYS:
+        game_ids = games.game_id[~games.game_id.isin(plays.game_id)].reset_index(drop=True)
+
+    get_game_plays(game_ids)
+    # get_game_plays(['201611150POR'])
