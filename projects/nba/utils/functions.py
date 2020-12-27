@@ -105,6 +105,15 @@ def mid(x, start, length):
     return x[start:start+length]
 
 
+def if_none(x, y):
+    output = []
+    if x is None:
+        output = y
+    else:
+        output = x
+    return output
+
+
 #
 # # Used to make predictions based on odds mispricing
 # def predmisprice(data):

@@ -43,6 +43,14 @@ def get_away_score(driver, i):
     return output
 
 
+def get_season(game_date):
+    if game_date.month <= 6:
+        output = game_date.year
+    else:
+        output = game_date.year + 1
+    return output
+
+
 def scrape_games(game_date, driver, df):
     daily_games = get_daily_games(driver)
     for i in range(len(daily_games)):
@@ -52,6 +60,7 @@ def scrape_games(game_date, driver, df):
         df.loc[i, 'home_score'] = get_home_score(driver, i)
         df.loc[i, 'away_team'] = get_away_team(driver, i)
         df.loc[i, 'away_score'] = get_away_score(driver, i)
+        df.loc[i, 'season'] = get_season(game_date)
 
 
 def get_games_data(dates):
@@ -76,7 +85,7 @@ def get_games_data(dates):
         # clear rows where game already exists
         try:
             connection_raw.execute(f'delete from nba.games where date = "{dates[i].date()}"')
-        except sql.exc.ProgrammingError:
+        except ProgrammingError:
             pass
 
         status = write_data(df=daily,
@@ -106,7 +115,7 @@ def get_games_data(dates):
 
 if __name__ == '__main__':
     # column names for games table
-    columns = ['game_id', 'date', 'home_team', 'home_score', 'away_team', 'away_score']
+    columns = ['game_id', 'date', 'home_team', 'home_score', 'away_team', 'away_score', 'season']
 
     # get games dataframe from DB, or build from scratch
     games = initialise_df(table_name='games',

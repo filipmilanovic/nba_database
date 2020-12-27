@@ -2,6 +2,7 @@
 from modelling.projects.nba.utils.classes import *
 from modelling.projects.nba.utils.colours import *
 from modelling.projects.nba.utils.connections import *
+from modelling.projects.nba.utils.dicts import *
 from modelling.projects.nba.utils.functions import *
 from modelling.projects.nba.utils.environment import *
 from modelling.projects.nba.utils.params import *

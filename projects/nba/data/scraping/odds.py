@@ -108,7 +108,7 @@ def get_odds_data(seasons):
         try:
             connection_raw.execute(f'delete from nba.odds where left(game_id, 8)*1 <= "{i}0630"'
                                    f'and left(game_id, 8)*1 >= {i-1}0701')
-        except sql.exc.ProgrammingError:
+        except ProgrammingError:
             pass
 
         get_season_data(driver, i)
