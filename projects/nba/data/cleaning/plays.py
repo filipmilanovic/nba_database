@@ -294,7 +294,10 @@ def get_shot_data(x, shooter_id, other_player_id, game_id):
 def get_rebound_data(x, y, player_id, game_id):
     shooter = None
     play = get_play(x)
-    if 'Miss' in y.event.item():
+    # there is a bug with rare missing shot info, or sub occurs after FT miss so the shooter isn't picked up
+    if y.event.item() is None:
+        shooter = None
+    elif 'Miss' in y.event.item():
         shooter = y.player_id.item()
     elif 'Block' in y.event.item():
         shooter = y.event_detail.item()
@@ -351,10 +354,17 @@ def get_foul_data(x, player_id, fouled_player_id, game_id):
     play = get_play(x)
 
     # find foul types which should 'reverse' the team_id
-    reversed_fouls = ['Personal foul',
-                      'Shooting foul',
+    reversed_fouls = ['Away from play foul',
+                      'Clear path foul',
                       'Def 3 sec tech foul',
-                      'Offensive charge foul']
+                      'Flagrant foul',
+                      'Inbound foul',
+                      'Offensive charge foul',
+                      'Personal foul',
+                      'Personal block foul',
+                      'Personal take foul',
+                      'Shooting foul',
+                      'Shooting block foul']
     event = re.search(r'(.*) foul', play).group(0)
     reverse = any(x in event for x in reversed_fouls)
 
@@ -514,4 +524,3 @@ if __name__ == '__main__':
         game_ids = games.game_id[~games.game_id.isin(plays.game_id)].reset_index(drop=True)
 
     get_game_plays(game_ids)
-    # get_game_plays(['201611150POR'])

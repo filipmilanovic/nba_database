@@ -1,6 +1,6 @@
 # Modelling
 ## NBA Package
-### Instructions
+### Set-up Instructions
 #### Terminal
 If running virtual environment (venv), initiate with
 
@@ -18,19 +18,19 @@ then install all requirements
 
 The project should now be set up and ready to run and interact with GitHub
 
-#### Setting up the DB
+#### Database
 By default, this project has been set up to work with MySQL databases.  All the SQL connections are defined at 
 [connections.py](projects/nba/utils/connections.py).
 
 The connection parameters can be adjusted at [environment.py](projects/nba/utils/environment.py).
 
-The `write_data`, `load_data` and `initialise_df` functions have been defined at [functions.py](projects/nba/utils/functions.py)
-and will need to be adjusted  if another DB is to be used.
+The `write_data`, `load_data` and `initialise_df` functions have been defined at
+[functions.py](projects/nba/utils/functions.py) and will need to be adjusted  if another DB is to be used.
 
-#### Setting up the Data
+#### Dataset
 To ensure everything runs smoothly, the modules should be run in the following order:
 
-[teams.py](projects/nba/data/cleaning/teams.py) - this automatically writes all team data defined in
+[cleaning.teams.py](projects/nba/data/cleaning/teams.py) - this automatically writes all team data defined in
 [classes.py](projects/nba/utils/classes.py) to `nba.teams` in the DB.
 
 [scraping.games.py](projects/nba/data/scraping/games.py) - this scrapes daily score data from Basketball Reference 
@@ -45,11 +45,34 @@ Reference for all games that appear within both the nba.games table, and the dat
 [params.py](projects/nba/utils/params.py)) for seasons existing in `nba.games`, then writes the data to `nba.odds` in
 the DB.
 
-#### Currently planned upgrades
-*Note: all data and modelling files that are not listed above are currently not in use.*
-* Cleaning the plays data
-* Analysing Player and Team performance
-* Predicting game probabilities
+[scraping.players.py](projects/nba/data/scraping/players.py) - this pulls the entire roster for each game-season
+combination in the `nba.games`, then scrapes information about each player in the list, then writes the data to
+`nba.players` in the DB.
 
-#### Current Bugs to Fix
+[scraping.game_lineups](projects/nba/data/scraping/game_lineups.py) - this goes through the box score for each game in
+`nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to
+`nba.games_lineups` in the DB.
+
+[cleaning.plays.py](projects/nba/data/cleaning/plays.py) - this applies logic to all raw play by play rows in
+`nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
+becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes the data to `nba.plays` in the DB.
+
+### Analysis & Modelling
+#### Potential analyses
+* Overall 'value added' statistic by player (e.g. +/- by player accounting for other players on the court)
+* Predicting game probabilities (e.g. based on record, home/away, fatigue, missing players)
+* Interesting stats/trends (e.g. likelihood of shooting/making next shot after shot/make; importance index
+  by game)
+
+### Planned Development
+*Note: all data and modelling files that are not listed above are currently not in use.*
+* Write [cleaning.game_logs.py](projects/nba/data/cleaning/plays.py) script to create a nicer dataset for predictive
+  analysis
+* Update [cleaning.plays.py](projects/nba/data/cleaning/plays.py) to include possession indicator and which players are
+  on the court
 * Make Team-based code adaptable for changes in team names
+
+### Bug Log
+* Occasionally Basketball Reference has a shot that doesn't show up, or a make that is incorrectly counted as a 2/3
+* Missing rebounds when a shot doesn't show up in Basketball Reference, or there is a substitution 'after' a missed FT,
+  so the shooter is not picked up
