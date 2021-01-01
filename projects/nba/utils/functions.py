@@ -6,6 +6,7 @@ from modelling.projects.nba.utils.path import *
 import pandas as pd
 import sqlalchemy as sql
 import sys
+from datetime import datetime as dt
 
 
 # Useful functions
@@ -106,13 +107,26 @@ def mid(x, start, length):
 
 
 def if_none(x, y):
-    output = []
     if x is None:
         output = y
     else:
         output = x
     return output
 
+
+def find_occurrence(x, y, n):
+    output = y.find(x)
+    while output >= 0 and n > 1:
+        output = y.find(x, output+len(x))
+        n -= 1
+    return output
+
+
+def get_seconds(x):
+    minutes = x.minute
+    seconds = x.second
+    output = minutes*60 + seconds
+    return output
 
 #
 # # Used to make predictions based on odds mispricing

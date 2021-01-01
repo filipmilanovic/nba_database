@@ -63,11 +63,8 @@ def get_player_position(driver):
     return output
 
 
-def get_players(df):
-    driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
-                              options=options)
-
-    player_list = list([])
+def get_player_list(df, driver):
+    output = list([])
 
     # loop through team/season combinations and build a list of URLs for each player
     for i in range(len(df)):
@@ -75,7 +72,7 @@ def get_players(df):
         season = df.season[i]
         url = f'https://www.basketball-reference.com/teams/{team}/{season}.html'
         team_list = get_player_url_list(url, driver)
-        player_list = player_list + team_list
+        output += team_list
         progress(iteration=i,
                  iterations=len(df),
                  iteration_name=f'{team} {season}',
@@ -84,36 +81,30 @@ def get_players(df):
                  csv_status='')
 
     # make it a distinct list to save time
-    player_list = pd.Series(sorted(list(set(player_list))))
+    output = pd.Series(sorted(list(set(output))))
 
     # skip players already in DB
     if SKIP_SCRAPED_PLAYERS:
-        names = [re.search('players/[a-z]/(.*)\.html', x).group(1) for x in player_list]
-        player_list = player_list[~pd.Series(names).isin(players.player_id)].reset_index(drop=True)
+        names = [re.search('players/[a-z]/(.*)\.html', x).group(1) for x in output]
+        output = output[~pd.Series(names).isin(players.player_id)].reset_index(drop=True)
 
     # return to regular output writing
     sys.stdout.write('\n')
 
     print(Colour.green + 'Generated list of players' + Colour.end)
 
-    get_player_data(player_list, driver)
-
-    # return to regular output writing
-    sys.stdout.write('\n')
-
-    # close web driver
-    driver.close()
+    return output
 
 
 def get_player_url_list(url, driver):
     driver.get(url)
     # look at all rows under roster for team and return href link
-    player_list = driver.find_elements_by_xpath('//*[@id="roster"]/tbody/tr/td[1]/a')
-    output = [x.get_attribute("href") for x in player_list if x.get_attribute("href")]
+    player_rows = driver.find_elements_by_xpath('//*[@id="roster"]/tbody/tr/td[1]/a')
+    output = [x.get_attribute("href") for x in player_rows if x.get_attribute("href")]
     return output
 
 
-def get_player_data(array, driver):
+def write_player_data(array, driver):
     for i in range(len(array)):
         driver.get(array[i])
 
@@ -167,6 +158,15 @@ def get_player_data(array, driver):
                  sql_status=status['sql'],
                  csv_status=status['csv'])
 
+    # return to regular output writing
+    sys.stdout.write('\n')
+
+    print(Colour.green + 'Player Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+          + ' seconds taken' + Colour.end)
+
+    # close web driver
+    driver.close()
+
 
 if __name__ == '__main__':
     columns = ['player_id', 'name', 'short_name', 'dob', 'height', 'weight', 'hand', 'position']
@@ -180,9 +180,15 @@ if __name__ == '__main__':
                       sql_engine=engine,
                       meta=metadata)
 
+    # open web driver
+    web_connection = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
+                                      options=options)
+
+    # generate list of unique teams and seasons
     team_season = pd.DataFrame({'team': games.home_team, 'season': games.season}).drop_duplicates().reset_index()
 
-    get_players(team_season)
+    # get list of players
+    player_list = get_player_list(team_season, web_connection)
 
-    print(Colour.green + 'Player Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
-          + ' seconds taken' + Colour.end)
+    # write player data
+    write_player_data(player_list, web_connection)
