@@ -72,7 +72,7 @@ written to produce players on the court.
   analysis
 * ~~Update [cleaning.plays.py](projects/nba/data/cleaning/plays.py) to include possession indicator and which players
   are on the court~~
-* Add automated performance testing
+* ~~Add automated performance testing~~
 * Update all data modules to be faster (e.g. multi-processing, writing output in batches, more efficient code)
 * Make Team-based code adaptable for changes in team names
 * Set up central control to build dataset from one script

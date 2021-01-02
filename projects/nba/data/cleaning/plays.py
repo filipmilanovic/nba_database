@@ -7,30 +7,40 @@ from modelling.projects.nba.data.scraping import *  # importing scraping for cer
 # get the plays for specified game
 def get_raw_plays(game_id):
     output = plays_raw.loc[plays_raw.game_id == game_id].reset_index()
+
+    log_performance()
     return output
 
 
 # cleans line break from raw plays
 def play_remove_line_break(x):
     output = re.sub(r'\n', '', x)
+
+    log_performance()
     return output
 
 
 # cleans out +d score from raw plays
 def play_remove_score_added(x):
     output = re.sub(r'(\+[0-9])', '', x)
+
+    log_performance()
     return output
 
 
 # cleans out scoreboard from raw plays
 def play_remove_score(x):
     output = re.sub(r'\d+(-)+\d+', '', x)
+
+    log_performance()
     return output
 
 
 # cleans out time remaining from raw plays
 def play_remove_time(x):
     output = re.sub(r'\d+:\d+\.\d', '', x)
+
+    log_performance()
     return output
 
 
@@ -41,6 +51,8 @@ def get_play(x):
     play_no_score = play_remove_score(play_no_score_added)
     play = play_remove_time(play_no_score)
     output = play.strip()
+
+    log_performance()
     return output
 
 
@@ -53,24 +65,32 @@ def get_quarter(x):
         output = 'OT' + str(left(period, 1))
     else:
         output = re.search(r'(.*) quarter', period).group(1)
+
+    log_performance()
     return output
 
 
 # get the time of the play
 def get_time(x):
     output = mid(x, 1, x.find('.') - 1)
+
+    log_performance()
     return output
 
 
 # gets score for home team at each play
 def get_home_score(x):
     output = int(re.search('(\d+)-', x).group(1))
+
+    log_performance()
     return output
 
 
 # gets score for away team at each play
 def get_away_score(x):
     output = int(re.search('-(\d+)', x).group(1))
+
+    log_performance()
     return output
 
 
@@ -97,6 +117,8 @@ def get_score(x):
         else:
             # if play is not a scoring play, grab score from previous row
             output.append(str(last_home_score) + '-' + str(last_away_score))
+
+    log_performance()
     return output
 
 
@@ -121,6 +143,8 @@ def get_team_id(x, game_id, reverse=False):
         if reverse:
             # in some cases (steals, blocks, some fouls), the play appears on the 'wrong' side
             output = games.home_team[games.game_id == game_id].item()
+
+    log_performance()
     return output
 
 
@@ -160,6 +184,7 @@ def get_on_court_player_ids(df):
     players = home_players[df.team_id == home_team].append(away_players[df.team_id == away_team]).sort_index()
     opp_players = home_players[df.team_id == away_team].append(away_players[df.team_id == home_team]).sort_index()
 
+    log_performance()
     return players, opp_players
 
 
@@ -195,6 +220,8 @@ def get_players_period(df, team, period):
 
     # re-index based on initial index of plays for the team
     output.index = index
+
+    log_performance()
     return output
 
 
@@ -224,12 +251,16 @@ def get_player_array(plays_info, previous_player_ids, iteration):
 
     # combine players back into player_id key
     output = convert_to_string(players)
+
+    log_performance()
     return output
 
 
 # turn on court player key to list of player_ids
 def extract_players(x):
     output = [i for i in x.split('|') if i]
+
+    log_performance()
     return output
 
 
@@ -242,6 +273,8 @@ def convert_to_string(x):
         players += x[4]
     # join player_ids
     output = ''.join(players)
+
+    log_performance()
     return output
 
 
@@ -268,6 +301,8 @@ def fill_down_players(array):
 
         # convert player list to player_id key
         array[i] = convert_to_string(play_list)
+
+    log_performance()
     return array
 
 
@@ -289,6 +324,7 @@ def check_on_court_data(series, team_id, game_id, period):
         print(f'Missing players in {period} period of {game_id}')
         exit()
 
+    log_performance()
     return output
 
 
@@ -303,6 +339,8 @@ def on_court_player_check(series):
 
     # return number of players found in list
     output = max(count_check)
+
+    log_performance()
     return output
 
 
@@ -325,6 +363,8 @@ def get_missing_players(series, team_id, game_id, period):
 
     # match initial index
     output.index = index
+
+    log_performance()
     return output
 
 
@@ -357,6 +397,8 @@ def scrape_box_score(team_id, game_id, period):
 
     # close the driver
     driver.close()
+
+    log_performance()
     return output
 
 
@@ -385,12 +427,15 @@ def get_player_minutes(driver, periods, team_id):
         except IndexError:
             pass
 
+    log_performance()
     return player_minutes
 
 
 # get box score key to use for accessing correct box score
 def get_box_key(team_id, period):
     output = 'box-' + team_id + '-' + period.lower() + '-basic'
+
+    log_performance()
     return output
 
 
@@ -410,6 +455,8 @@ def click_period(driver, period):
 
     # click on tab to open desired period box score
     tab.click()
+
+    log_performance()
 
 
 # get the box score of a given period
@@ -435,6 +482,8 @@ def get_box_score(driver, key):
 
     # replace empty minutes played with 0 and convert series to time
     output.minutes = [dt.strptime(i.replace('\xa0', '0:00'), '%M:%S').time() for i in output.minutes]
+
+    log_performance()
     return output
 
 
@@ -455,6 +504,7 @@ def get_missing_period_minutes(df, periods):
     for i in range(1, len(minutes_played.columns)):
         output -= minutes_played[periods[i]]
 
+    log_performance()
     return output
 
 
@@ -469,6 +519,8 @@ def add_missing_player(series, player_id):
         to_append = player_id
     # loop through each row in the series
     output = pd.Series([i + to_append for i in series])
+
+    log_performance()
     return output
 
 
@@ -483,6 +535,8 @@ def get_shot_value(x):
         output = match.group(1)
     else:
         output = None
+
+    log_performance()
     return output
 
 
@@ -499,6 +553,8 @@ def get_shot_detail(x):
         output = match.group(1)
     else:
         output = 0
+
+    log_performance()
     return output
 
 
@@ -520,6 +576,8 @@ def get_period_start(x, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -539,6 +597,8 @@ def get_period_end(game_id):
              1  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -573,6 +633,8 @@ def get_jump_ball_data(x, player_1, player_2, player_3, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -593,6 +655,8 @@ def get_shot_attempt_data(x, shot_type, player_id, game_id):
              0  # possession
              ]
     output = array
+
+    log_performance()
     return output
 
 
@@ -613,6 +677,8 @@ def get_shot_make_data(x, shot_type, player_id, game_id):
              1  # possession
              ]
     output = array
+
+    log_performance()
     return output
 
 
@@ -633,6 +699,8 @@ def get_shot_miss_data(x, shot_type, player_id, game_id):
              1  # possession
              ]
     output = array
+
+    log_performance()
     return output
 
 
@@ -652,6 +720,8 @@ def get_assist_data(x, shooter_id, player_id, game_id):
              0  # possession
              ]
     output = array
+
+    log_performance()
     return output
 
 
@@ -671,6 +741,8 @@ def get_block_data(x, shooter_id, player_id, game_id):
              0  # possession
              ]
     output = array
+
+    log_performance()
     return output
 
 
@@ -708,6 +780,8 @@ def get_shot_data(x, shooter_id, other_player_id, game_id):
 
     # create dataframe of given rows
     output = pd.DataFrame(arrays, columns=columns)
+
+    log_performance()
     return output
 
 
@@ -736,6 +810,8 @@ def get_rebound_data(x, y, player_id, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -756,6 +832,8 @@ def get_turnover_data(x, player_id, game_id):
              1  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -774,6 +852,8 @@ def get_steal_data(x, turnover_player_id, player_id, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -809,6 +889,8 @@ def get_foul_data(x, player_id, fouled_player_id, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -828,6 +910,8 @@ def get_violation_data(x, player_id, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -846,6 +930,8 @@ def get_substitution_data(x, player_id, sub_player_id, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -866,6 +952,8 @@ def get_timeout_data(x, game_id):
              0  # possession
              ]
     output = pd.DataFrame([array], columns=columns)
+
+    log_performance()
     return output
 
 
@@ -898,6 +986,8 @@ def clean_plays(df):
         elif 'timeout' in df.plays[i]:
             output = output.append(get_timeout_data(df.plays[i], game_id))
     output = output
+
+    log_performance()
     return output
 
 
@@ -927,12 +1017,14 @@ def tidy_game_plays(df):
             players = df.players[i-1]
             opp_players = df.opp_players[i-1]
         df.loc[i, ['team_id', 'players', 'opp_players']] = [team_id, players, opp_players]
+
+    log_performance()
     return df
 
 
 def write_game_plays(series):
     for i in range(len(series)):
-        game_start = time.time()
+        game_start = time.process_time()
 
         # grab raw plays data for the given game_id from plays_raw table
         game_plays_raw = get_raw_plays(series[i])
@@ -964,7 +1056,7 @@ def write_game_plays(series):
         except ProgrammingError:
             pass
 
-        cleaning_time = time.time() - game_start
+        cleaning_time = time.process_time() - game_start
 
         # write to DB and CSV and get status
         status = write_data(df=game_plays,
@@ -975,7 +1067,7 @@ def write_game_plays(series):
                             if_exists='append',
                             index=False)
 
-        writing_time = time.time() - game_start - cleaning_time
+        writing_time = time.process_time() - game_start - cleaning_time
 
         time_taken = 'Cleaned in ' + "{:.2f}".format(cleaning_time) + ' seconds, '\
                      'Written in ' + "{:.2f}".format(writing_time) + ' seconds, '\
@@ -1025,4 +1117,7 @@ if __name__ == '__main__':
     if SKIP_SCRAPED_DAYS:
         game_ids = games.game_id[~games.game_id.isin(plays.game_id)].reset_index(drop=True)
 
+    log_performance()
+
     write_game_plays(game_ids)
+    write_performance()
