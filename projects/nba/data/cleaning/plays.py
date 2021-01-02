@@ -6,7 +6,21 @@ from modelling.projects.nba.data.scraping import *  # importing scraping for cer
 # LOADING AND TIDYING OF RAW PLAYS TEXT
 # get the plays for specified game
 def get_raw_plays(game_id):
-    output = plays_raw.loc[plays_raw.game_id == game_id].reset_index()
+    home_team = games.home_team[games.game_id == game_id].item()
+    away_team = games.away_team[games.game_id == game_id].item()
+
+    global team_names
+    team_names = {'home_team': home_team, 'away_team': away_team}
+
+    output = plays_raw.loc[plays_raw.game_id == game_id]
+    output = output.iloc[1:].reset_index()
+    output['plays'] = play_remove_line_break(output['plays'])
+    output['plays'] = play_remove_score_added(output['plays'])
+    output['time'] = get_time(output['plays'])
+    output['plays'] = play_remove_time(output['plays'])
+    output['teams'] = get_teams(output['plays'])
+    output['plays'] = play_remove_score(output['plays'])
+    output['plays'] = output['plays'].str.strip()
 
     log_performance()
     return output
@@ -14,7 +28,8 @@ def get_raw_plays(game_id):
 
 # cleans line break from raw plays
 def play_remove_line_break(x):
-    output = re.sub(r'\n', '', x)
+    # output = re.sub(r'\n', '', x)
+    output = x.str.replace(r'\n', '')
 
     log_performance()
     return output
@@ -22,7 +37,8 @@ def play_remove_line_break(x):
 
 # cleans out +d score from raw plays
 def play_remove_score_added(x):
-    output = re.sub(r'(\+[0-9])', '', x)
+    # output = re.sub(r'(\+[0-9])', '', x)
+    output = x.str.replace(r'(\+[0-9])', '')
 
     log_performance()
     return output
@@ -30,7 +46,8 @@ def play_remove_score_added(x):
 
 # cleans out scoreboard from raw plays
 def play_remove_score(x):
-    output = re.sub(r'\d+(-)+\d+', '', x)
+    # output = re.sub(r'\d+(-)+\d+', '', x)
+    output = x.str.replace(r'\d+-+\d+', '')
 
     log_performance()
     return output
@@ -38,19 +55,8 @@ def play_remove_score(x):
 
 # cleans out time remaining from raw plays
 def play_remove_time(x):
-    output = re.sub(r'\d+:\d+\.\d', '', x)
-
-    log_performance()
-    return output
-
-
-# cleans the raw play text to just show the play
-def get_play(x):
-    play_no_line_break = play_remove_line_break(x)
-    play_no_score_added = play_remove_score_added(play_no_line_break)
-    play_no_score = play_remove_score(play_no_score_added)
-    play = play_remove_time(play_no_score)
-    output = play.strip()
+    # output = re.sub(r'\d+:\d+\.\d', '', x)
+    output = x.str.replace(r'\d+:\d+\.\d', '')
 
     log_performance()
     return output
@@ -58,8 +64,8 @@ def get_play(x):
 
 # FILLING BASIC PLAY INFORMATION
 # get the period of the game based on the 'start of period' line
-def get_quarter(x):
-    play = get_play(x)
+def get_quarter(play):
+    # play = get_play(x)
     period = re.search(r'Start of (.*)', play).group(1)
     if 'overtime' in period:
         output = 'OT' + str(left(period, 1))
@@ -71,78 +77,55 @@ def get_quarter(x):
 
 
 # get the time of the play
-def get_time(x):
-    output = mid(x, 1, x.find('.') - 1)
+def get_time(series):
+    output = series.str.extract(r'(\d+:\d+\.\d)', expand=False)
+    output = output.str.replace(r'\.0', '')
 
     log_performance()
     return output
 
 
-# gets score for home team at each play
-def get_home_score(x):
-    output = int(re.search('(\d+)-', x).group(1))
+def get_score(df):
+    home_points = (df.loc[df['event'].str.contains(' Make')
+                          & (df['team_id'] == team_names['home_team']),
+                          'event_value']).reindex(range(len(df))).fillna(0)
+    home_cumulative = home_points.astype('int').cumsum().astype('str')
 
-    log_performance()
-    return output
+    away_points = (df.loc[df['event'].str.contains(' Make')
+                          & (df['team_id'] == team_names['away_team']),
+                          'event_value']).reindex(range(len(df))).fillna(0)
+    away_cumulative = away_points.astype('int').cumsum().astype('str')
 
-
-# gets score for away team at each play
-def get_away_score(x):
-    output = int(re.search('-(\d+)', x).group(1))
-
-    log_performance()
-    return output
-
-
-# builds score column in df
-def get_score(x):
-    game_id = x.game_id[0]
-    home_team = games.home_team[games.game_id == game_id].item()
-    away_team = games.away_team[games.game_id == game_id].item()
-    output = []
-    for i in range(len(x)):
-        try:
-            # gets scores from previous play
-            last_home_score = get_home_score(output[i-1])
-            last_away_score = get_away_score(output[i-1])
-        except IndexError:
-            # sets scores to 0 when iteration on first play
-            last_home_score = 0
-            last_away_score = 0
-        if ' Make' in x.event[i]:
-            # adds scoring plays to the total score
-            home_score = last_home_score + int(x.event_value[i]) * (x.team_id[i] == home_team) * 1
-            away_score = last_away_score + int(x.event_value[i]) * (x.team_id[i] == away_team) * 1
-            output.append(str(home_score) + '-' + str(away_score))
-        else:
-            # if play is not a scoring play, grab score from previous row
-            output.append(str(last_home_score) + '-' + str(last_away_score))
+    output = home_cumulative.str.cat(away_cumulative, sep='-')
 
     log_performance()
     return output
 
 
 # find team_id based on the location of the actual play to the score in the raw text line (away before, home after)
-def get_team_id(x, game_id, reverse=False):
-    play_no_line_break = play_remove_line_break(x)
-    play_no_score_added = play_remove_score_added(play_no_line_break)
-    play_no_time = play_remove_time(play_no_score_added)
-    play = play_no_time.strip()
+def get_teams(series):
+    # find location of score in the strings
+    scores = series.str.extract(r'(\d+-+\d+)', expand=False)
+    score_location = pd.Series([series[i].find(str(scores[i])) for i in range(len(series))])
 
-    # find part of string with d-d score format
-    score = re.search(r'\d+(-)+\d+', play).group(0)
-    if len(re.search(f'{score}(.*)', play).group(1)) > 1:
-        # if play detail after score, then select home team
-        output = games.home_team[games.game_id == game_id].item()
-        if reverse:
-            # in some cases (steals, blocks, some fouls), the play appears on the 'wrong' side
-            output = games.away_team[games.game_id == game_id].item()
-    else:
-        # if play detail before score, then select away team
-        output = games.away_team[games.game_id == game_id].item()
-        if reverse:
-            # in some cases (steals, blocks, some fouls), the play appears on the 'wrong' side
-            output = games.home_team[games.game_id == game_id].item()
+    # set mapping conditions
+    conditions = [score_location == -1, score_location == 2]
+    teams = [None, team_names['home_team']]
+
+    # generate column of teams
+    output = np.select(conditions, teams, default=team_names['away_team'])
+
+    log_performance()
+    return output
+
+
+def get_team_id(row, reverse=False):
+    # set as initial team_id
+    output = row['teams']
+
+    # in some cases (steals, blocks, some fouls), the play appears on the 'wrong' side
+    if reverse:
+        output = list(team_names.values())[team_names['home_team'] == output]
 
     log_performance()
     return output
@@ -337,8 +320,8 @@ def on_court_player_check(series):
     for i in series.index:
         count_check.loc[i] = series[i].count('0')
 
-    # return number of players found in list
-    output = max(count_check)
+    # return minimum number of players found in list
+    output = min(count_check)
 
     log_performance()
     return output
@@ -526,11 +509,11 @@ def add_missing_player(series, player_id):
 
 # GET EVENT_DETAIL FOR SHOTS
 # get the amount of points a shot was worth
-def get_shot_value(x):
-    if 'free throw' in x:
+def get_shot_value(play):
+    if 'free throw' in play:
         # FTs worth 1 point
         output = 1
-    elif match := re.search(r'(\d)-pt', x):
+    elif match := re.search(r'(\d)-pt', play):
         # FGs worth amount given in play
         output = match.group(1)
     else:
@@ -541,14 +524,14 @@ def get_shot_value(x):
 
 
 # get distance of shot, or which free throw it was
-def get_shot_detail(x):
-    if match := re.search(r'free throw (\d)', x):
+def get_shot_detail(play):
+    if match := re.search(r'free throw (\d)', play):
         # get which number in sequence of FTs
         output = match.group(1)
-    elif 'technical' in x:
+    elif 'technical' in play:
         # get if technical FT
         output = 1
-    elif match := re.search(r'(\d+) ft', x):
+    elif match := re.search(r'(\d+) ft', play):
         # get distance of shot if FG
         output = match.group(1)
     else:
@@ -560,11 +543,11 @@ def get_shot_detail(x):
 
 # PRODUCE ROWS FOR EACH DIFFERENT TYPE OF EVENT
 # Produce the 'Period Start' line in order to get the correct period
-def get_period_start(x, game_id):
-    play = x
+def get_period_start(row, game_id):
+    play = row['plays']
     array = [game_id,  # game_id
              get_quarter(play),  # period
-             get_time(play),  # time
+             row['time'],  # time
              None,  # score
              None,  # team_id
              None,  # players
@@ -603,7 +586,10 @@ def get_period_end(game_id):
 
 
 # get data for a jump ball
-def get_jump_ball_data(x, player_1, player_2, player_3, game_id):
+def get_jump_ball_data(row, game_id):
+    player_1 = row['player_1']
+    player_2 = row['player_2']
+    player_3 = row['player_3']
     # find team that controlled the tip
     winning_team_id = games_lineups.team_id[(games_lineups.game_id == game_id) &
                                             (games_lineups.player_id == player_3)].item()
@@ -618,10 +604,9 @@ def get_jump_ball_data(x, player_1, player_2, player_3, game_id):
     else:
         winning_player_id = player_2
         losing_player_id = player_1
-    play = x
     array = [game_id,  # game_id
              None,  # period
-             get_time(play),  # time
+             row['time'],  # time
              None,  # score
              winning_team_id,  # team_id
              None,  # players
@@ -639,13 +624,14 @@ def get_jump_ball_data(x, player_1, player_2, player_3, game_id):
 
 
 # get necessary data for a shot attempt
-def get_shot_attempt_data(x, shot_type, player_id, game_id):
-    play = get_play(x)
+def get_shot_attempt_data(row, shot_type, game_id):
+    play = row['plays']
+    player_id = row['player_1']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -661,13 +647,14 @@ def get_shot_attempt_data(x, shot_type, player_id, game_id):
 
 
 # get necessary data for a made shot
-def get_shot_make_data(x, shot_type, player_id, game_id):
-    play = get_play(x)
+def get_shot_make_data(row, shot_type, game_id):
+    play = row['plays']
+    player_id = row['player_1']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -683,13 +670,14 @@ def get_shot_make_data(x, shot_type, player_id, game_id):
 
 
 # get necessary data for a missed shot
-def get_shot_miss_data(x, shot_type, player_id, game_id):
-    play = get_play(x)
+def get_shot_miss_data(row, shot_type, game_id):
+    play = row['plays']
+    player_id = row['player_1']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -705,12 +693,14 @@ def get_shot_miss_data(x, shot_type, player_id, game_id):
 
 
 # get which player assisted if there was a made shot
-def get_assist_data(x, shooter_id, player_id, game_id):
+def get_assist_data(row, game_id):
+    shooter_id = row['player_1']
+    player_id = row['player_2']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -726,12 +716,14 @@ def get_assist_data(x, shooter_id, player_id, game_id):
 
 
 # get which player blocked a shot
-def get_block_data(x, shooter_id, player_id, game_id):
+def get_block_data(row, game_id):
+    shooter_id = row['player_1']
+    player_id = row['player_2']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id, True),  # team_id
+             get_team_id(row, True),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -747,35 +739,36 @@ def get_block_data(x, shooter_id, player_id, game_id):
 
 
 # combine all shot related information to produce detailed rows of data
-def get_shot_data(x, shooter_id, other_player_id, game_id):
+def get_shot_data(row, game_id):
+    play = row['plays']
     arrays = []
     # label FT or FG
-    if 'free throw' in x:
+    if 'free throw' in play:
         shot_type = 'FT'
     else:
         shot_type = 'FG'
 
     # get row for shot attempt
-    shot = get_shot_attempt_data(x, shot_type, shooter_id, game_id)
+    shot = get_shot_attempt_data(row, shot_type, game_id)
 
     # get row for shot miss
-    if ' misses' in x:
-        miss = get_shot_miss_data(x, shot_type, shooter_id, game_id)
+    if ' misses' in play:
+        miss = get_shot_miss_data(row, shot_type, game_id)
         arrays = [shot, miss]
 
         # get row for block if shot blocked
-        if 'block by' in x:
-            block = get_block_data(x, shooter_id, other_player_id, game_id)
+        if 'block by' in play:
+            block = get_block_data(row, game_id)
             arrays = [shot, miss, block]
 
     # get row for shot make
-    elif ' makes' in x:
-        make = get_shot_make_data(x, shot_type, shooter_id, game_id)
+    elif ' makes' in play:
+        make = get_shot_make_data(row, shot_type, game_id)
         arrays = [shot, make]
 
         # get row for assist if applicable
-        if 'assist by' in x:
-            assist = get_assist_data(x, shooter_id, other_player_id, game_id)
+        if 'assist by' in play:
+            assist = get_assist_data(row, game_id)
             arrays = [shot, make, assist]
 
     # create dataframe of given rows
@@ -786,9 +779,10 @@ def get_shot_data(x, shooter_id, other_player_id, game_id):
 
 
 # get who rebounded the ball, with whose shot they rebounded
-def get_rebound_data(x, y, player_id, game_id):
+def get_rebound_data(row, y, game_id):
     shooter = None
-    play = get_play(x)
+    play = row['plays']
+    player_id = row['player_1']
     # there is a bug with rare missing shot info, or sub occurs after FT miss so the shooter isn't picked up
     if y.event.item() is None:
         shooter = None
@@ -798,9 +792,9 @@ def get_rebound_data(x, y, player_id, game_id):
         shooter = y.event_detail.item()
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -815,14 +809,15 @@ def get_rebound_data(x, y, player_id, game_id):
     return output
 
 
-def get_turnover_data(x, player_id, game_id):
-    play = get_play(x)
+def get_turnover_data(row, game_id):
+    play = row['plays']
+    player_id = row['player_1']
     detail = if_none(re.search(r'\((.*);', play), re.search(r'\((.*)\)', play))
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -837,12 +832,14 @@ def get_turnover_data(x, player_id, game_id):
     return output
 
 
-def get_steal_data(x, turnover_player_id, player_id, game_id):
+def get_steal_data(row, game_id):
+    turnover_player_id = row['player_1']
+    player_id = row['player_2']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id, True),  # team_id
+             get_team_id(row, True),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -857,8 +854,10 @@ def get_steal_data(x, turnover_player_id, player_id, game_id):
     return output
 
 
-def get_foul_data(x, player_id, fouled_player_id, game_id):
-    play = get_play(x)
+def get_foul_data(row, game_id):
+    play = row['plays']
+    player_id = row['player_1']
+    fouled_player_id = row['player_2']
 
     # find foul types which should 'reverse' the team_id
     reversed_fouls = ['Away from play foul',
@@ -877,9 +876,9 @@ def get_foul_data(x, player_id, fouled_player_id, game_id):
 
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id, reverse),  # team_id
+             get_team_id(row, reverse),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -894,13 +893,14 @@ def get_foul_data(x, player_id, fouled_player_id, game_id):
     return output
 
 
-def get_violation_data(x, player_id, game_id):
-    play = get_play(x)
+def get_violation_data(row, game_id):
+    play = row['plays']
+    player_id = row['player_1']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -915,12 +915,14 @@ def get_violation_data(x, player_id, game_id):
     return output
 
 
-def get_substitution_data(x, player_id, sub_player_id, game_id):
+def get_substitution_data(row, game_id):
+    player_id = row['player_1']
+    sub_player_id = row['player_2']
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              player_id,  # player_id
@@ -935,14 +937,14 @@ def get_substitution_data(x, player_id, sub_player_id, game_id):
     return output
 
 
-def get_timeout_data(x, game_id):
-    play = get_play(x)
+def get_timeout_data(row, game_id):
+    play = row['plays']
     detail = re.search(r'(20 second|full|Official) timeout', play).group(1)
     array = [game_id,  # game_id
              None,  # period
-             get_time(x),  # time
+             row['time'],  # time
              None,  # score
-             get_team_id(x, game_id),  # team_id
+             get_team_id(row),  # team_id
              None,  # players
              None,  # opp_players
              None,  # player_id
@@ -960,31 +962,30 @@ def get_timeout_data(x, game_id):
 # iterate through plays to produce base event details
 def clean_plays(df):
     output = pd.DataFrame(columns=columns)
-    for i in range(len(df.plays)):
+    for i in range(len(df['plays'])):
         game_id = df.game_id[i]
-        if 'Start of ' in df.plays[i]:
-            output = output.append(get_period_start(df.plays[i], game_id))
-        elif 'End of ' in df.plays[i]:
+        if 'Start of ' in df.loc[i, 'plays']:
+            output = output.append(get_period_start(df.loc[i], game_id))
+        elif 'End of ' in df.loc[i, 'plays']:
             output = output.append(get_period_end(game_id))
-        elif all(x in df.plays[i] for x in ['Jump ball', 'possession']):
-            output = output.append(get_jump_ball_data(df.plays[i], df.player_1[i], df.player_2[i], df.player_3[i],
-                                                      game_id))
-        elif any(x in df.plays[i] for x in [' makes ', ' misses ']):
-            output = output.append(get_shot_data(df.plays[i], df.player_1[i], df.player_2[i], game_id))
-        elif ' rebound ' in df.plays[i]:
-            output = output.append(get_rebound_data(df.plays[i], output.tail(1), df.player_1[i], game_id))
-        elif 'Turnover ' in df.plays[i]:
-            output = output.append(get_turnover_data(df.plays[i], df.player_1[i], game_id))
-            if 'steal by' in df.plays[i]:
-                output = output.append(get_steal_data(df.plays[i], df.player_1[i], df.player_2[i], game_id))
-        elif ' foul ' in df.plays[i]:
-            output = output.append(get_foul_data(df.plays[i], df.player_1[i], df.player_2[i], game_id))
-        elif 'Violation' in df.plays[i]:
-            output = output.append(get_violation_data(df.plays[i], df.player_1[i], game_id))
-        elif 'enters the game' in df.plays[i]:
-            output = output.append(get_substitution_data(df.plays[i], df.player_1[i], df.player_2[i], game_id))
-        elif 'timeout' in df.plays[i]:
-            output = output.append(get_timeout_data(df.plays[i], game_id))
+        elif all(x in df.loc[i, 'plays'] for x in ['Jump ball', 'possession']):
+            output = output.append(get_jump_ball_data(df.loc[i], game_id))
+        elif any(x in df.loc[i, 'plays'] for x in [' makes ', ' misses ']):
+            output = output.append(get_shot_data(df.loc[i], game_id))
+        elif ' rebound ' in df.loc[i, 'plays']:
+            output = output.append(get_rebound_data(df.loc[i], output.tail(1), game_id))
+        elif 'Turnover ' in df.loc[i, 'plays']:
+            output = output.append(get_turnover_data(df.loc[i], game_id))
+            if 'steal by' in df.loc[i, 'plays']:
+                output = output.append(get_steal_data(df.loc[i], game_id))
+        elif ' foul ' in df.loc[i, 'plays']:
+            output = output.append(get_foul_data(df.loc[i], game_id))
+        elif 'Violation' in df.loc[i, 'plays']:
+            output = output.append(get_violation_data(df.loc[i], game_id))
+        elif 'enters the game' in df.loc[i, 'plays']:
+            output = output.append(get_substitution_data(df.loc[i], game_id))
+        elif 'timeout' in df.loc[i, 'plays']:
+            output = output.append(get_timeout_data(df.loc[i], game_id))
     output = output
 
     log_performance()
