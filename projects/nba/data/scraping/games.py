@@ -74,8 +74,11 @@ def scrape_season_games(driver, months, season):
         # initialise monthly dataframe
         monthly = pd.DataFrame(columns=columns)
 
+        # set month for url (lower case, and 2020 includes two separate Octobers)
+        month = x.lower().replace(' ', '-')
+
         # jump to month/season combination of games
-        driver.get(f"https://www.basketball-reference.com/leagues/NBA_{season}_games-{x.lower()}.html")
+        driver.get(f"https://www.basketball-reference.com/leagues/NBA_{season}_games-{month}.html")
         time.sleep(0.5)
 
         # get schedule table
