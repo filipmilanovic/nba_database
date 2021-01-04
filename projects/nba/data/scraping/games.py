@@ -85,7 +85,7 @@ def get_games_data(dates):
 
         # clear rows where game already exists
         try:
-            connection_raw.execute(f'delete from nba.games where game_id = "({daily_game_ids})"')
+            connection_raw.execute(f'delete from nba.games where game_id in "({daily_game_ids})"')
         except ProgrammingError:
             create_table_games()
 
