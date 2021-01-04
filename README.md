@@ -68,9 +68,13 @@ becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes t
 *Note: all data and modelling files that are not listed above are currently not in use.*
 * Write [cleaning.game_logs.py](projects/nba/data/cleaning/plays.py) script to create a nicer dataset for predictive
   analysis
-* Update [cleaning.plays.py](projects/nba/data/cleaning/plays.py) to include possession indicator and which players are
-  on the court
+* ~~Update [cleaning.plays.py](projects/nba/data/cleaning/plays.py) to include possession indicator and which players
+  are on the court~~
+* ~~Add automated performance testing~~
+* Update all data modules to be faster (e.g. multi-processing, writing output in batches, more efficient code)
 * Make Team-based code adaptable for changes in team names
+* Set up central control to build dataset from one script
+* **Goal is to scrape 20 seasons of data reasonably quickly and accurately**
 
 ### Bug Log
 * Occasionally Basketball Reference has a shot that doesn't show up, or a make that is incorrectly counted as a 2/3

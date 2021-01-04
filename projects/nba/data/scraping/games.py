@@ -1,5 +1,4 @@
 # SCRAPING GAME DATA
-
 from modelling.projects.nba import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
@@ -77,16 +76,18 @@ def get_games_data(dates):
                    + '&day=' + str(dates[i].strftime('%d')) + '&year=' + str(dates[i].strftime('%Y')))
 
         # wait for page to load
-        time.sleep(1)
+        time.sleep(0.5)
 
         # scrape the daily data
         scrape_games(dates[i], driver, daily)
 
+        daily_game_ids = ', '.join(daily['game_id'])
+
         # clear rows where game already exists
         try:
-            connection_raw.execute(f'delete from nba.games where date = "{dates[i].date()}"')
+            connection_raw.execute(f'delete from nba.games where game_id in "({daily_game_ids})"')
         except ProgrammingError:
-            pass
+            create_table_games()
 
         status = write_data(df=daily,
                             name='games',
