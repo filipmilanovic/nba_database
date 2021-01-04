@@ -56,8 +56,6 @@ combination in the `nba.games`, then scrapes information about each player in th
 [cleaning.plays.py](projects/nba/data/cleaning/plays.py) - this applies logic to all raw play by play rows in
 `nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
 becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes the data to `nba.plays` in the DB.
-Unfortunately, Basketball Reference does not show substitutions during breaks, so a messy extra bit of code has been
-written to produce players on the court.
 
 ### Analysis & Modelling
 #### Potential analyses

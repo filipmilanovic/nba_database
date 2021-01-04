@@ -3,7 +3,19 @@ from modelling.projects.nba.utils.connections import *
 import inspect
 
 # write performance of functions to DB
-PERFORMANCE_TEST = True
+PERFORMANCE_TEST = False
+
+if PERFORMANCE_TEST:
+    # create connection to performance schema
+    try:
+        engine_perf = sql.create_engine('mysql://' + USER + ':' + PASSWORD
+                                        + '@' + HOST + '/' + DATABASE_PERF + '?charset=utf8mb4')
+        connection_perf = engine_perf.connect()
+        metadata_perf = sql.MetaData(engine_perf)
+        print(Colour.green + 'Established SQL connection to performance schema' + Colour.end)
+    except sql.exc.OperationalError:
+        print(Colour.red + "Couldn't establish SQL connection" + Colour.end)
+
 
 performance = []
 
@@ -33,7 +45,7 @@ def write_performance():
         output.loc[1:len(running_time), 'running_time'] = running_time
 
         output.to_sql('performance',
-                      con=engine,
+                      con=engine_perf,
                       schema='performance',
                       if_exists='replace',
                       index=False)
