@@ -3,93 +3,146 @@ from modelling.projects.nba import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
 
-def game_index(game_date, name):
-    short_date = pd.to_datetime(game_date).strftime('%Y%m%d')
-    return short_date + '0' + name
+# convert to standardised date format
+def convert_date(x):
+    output = dt.strptime(x, "%a, %b %d, %Y").strftime("%Y-%m-%d")
 
-
-def get_daily_games(driver):
-    output = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[1]/a")
+    log_performance()
     return output
 
 
-def get_home_team(driver, i):
-    home_team = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[1]/a")
-    output = Team.team_ids[Team.short_names.index(home_team[i].text)]
+# find header from each row and return game_id
+def get_game_id(rows):
+    output = [x.findChild('th').get('csk') for x in rows]
+
+    log_performance()
     return output
 
 
-def get_home_score(driver, i):
-    home_score = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[2]/td[2]")
-    output = home_score[i].text
+# get date from row header and convert to standardised date
+def get_game_date(rows):
+    output = [convert_date(x.findChild('th').findChild('a').text) for x in rows]
+
+    log_performance()
     return output
 
 
-def get_away_team(driver, i):
-    away_team = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[1]/a")
-    output = Team.team_ids[Team.short_names.index(away_team[i].text)]
+# return 'csk' item from the element of each row designated to home team name, then extract team_id
+def get_home_team(rows):
+    output = [re.search(r'([A-Z]+)\.', x[i].get('csk')).group(1) for x in rows for i in range(len(rows[0]))
+              if x[i].get('data-stat') == 'home_team_name']
+
+    log_performance()
     return output
 
 
-def get_away_score(driver, i):
-    away_score = driver.find_elements_by_xpath(
-        "//*[@class='game_summary expanded nohover']/table[1]/tbody/tr[1]/td[2]")
-    output = away_score[i].text
+# return text from the element of each row designated to home points
+def get_home_score(rows):
+    output = [x[i].text for x in rows for i in range(len(rows[0]))
+              if x[i].get('data-stat') == 'home_pts']
+
+    log_performance()
     return output
 
 
-def get_season(game_date):
-    if game_date.month <= 6:
-        output = game_date.year
-    else:
-        output = game_date.year + 1
+# return 'csk' item from the element of each row designated to away team name, then extract team_id
+def get_away_team(rows):
+    output = [re.search(r'([A-Z]+)\.', x[i].get('csk')).group(1) for x in rows for i in range(len(rows[0]))
+              if x[i].get('data-stat') == 'visitor_team_name']
+
+    log_performance()
     return output
 
 
-def scrape_games(game_date, driver, df):
-    daily_games = get_daily_games(driver)
-    for i in range(len(daily_games)):
-        df.loc[i, 'game_id'] = game_index(game_date.strftime('%Y-%m-%d'), get_home_team(driver, i))
-        df.loc[i, 'date'] = str(game_date.strftime('%Y-%m-%d'))
-        df.loc[i, 'home_team'] = get_home_team(driver, i)
-        df.loc[i, 'home_score'] = get_home_score(driver, i)
-        df.loc[i, 'away_team'] = get_away_team(driver, i)
-        df.loc[i, 'away_score'] = get_away_score(driver, i)
-        df.loc[i, 'season'] = get_season(game_date)
+# return text from the element of each row designated to visitor points
+def get_away_score(rows):
+    output = [x[i].text for x in rows for i in range(len(rows[0]))
+              if x[i].get('data-stat') == 'visitor_pts']
+
+    log_performance()
+    return output
 
 
-def get_games_data(dates):
-    # selenium driver
+def scrape_season_games(driver, months, season):
+    # initialise season dataframe
+    output = pd.DataFrame(columns=columns)
+
+    # set a default date for playoffs start, which will be updated later when we know the date
+    playoff_date = dt.strptime(f'{season}-12-31', '%Y-%m-%d')
+
+    for x in months:
+        # initialise monthly dataframe
+        monthly = pd.DataFrame(columns=columns)
+
+        # jump to month/season combination of games
+        driver.get(f"https://www.basketball-reference.com/leagues/NBA_{season}_games-{x.lower()}.html")
+        time.sleep(0.5)
+
+        # get schedule table
+        schedule = driver.find_element_by_id('schedule')
+
+        # get html text of schedule table, and return all rowz
+        soup = BeautifulSoup(schedule.get_attribute('innerHTML'), 'html.parser')
+        table = soup.findChild('tbody').findChildren('tr')
+
+        # get whole rows
+        rows = [x for x in table if x.get('data-row') is not None and x.get('class') is None]
+
+        # get row cells
+        row_cells = [x.findChildren('td') for x in rows]
+
+        # if playoffs happen in the month, update the playoff_date
+        try:
+            playoff = [i for i in range(len(table)) if table[i].text == 'Playoffs'][0]
+            playoff_date = convert_date(table[playoff-1].findChild('th').findChild('a').text)
+        except IndexError:
+            pass
+
+        # get all data into monthly data_frame
+        monthly['game_id'] = get_game_id(rows)
+        monthly['game_date'] = get_game_date(rows)
+        monthly['home_team'] = get_home_team(row_cells)
+        monthly['home_score'] = get_home_score(row_cells)
+        monthly['away_team'] = get_away_team(row_cells)
+        monthly['away_score'] = get_away_score(row_cells)
+        monthly['season'] = [season] * len(monthly)
+        monthly['is_playoffs'] = (pd.to_datetime(monthly['game_date']) > playoff_date)*1
+
+        output = output.append(monthly)
+
+        log_performance()
+    return output
+
+
+def write_games_data(seasons):
+    # initialise selenium driver
     driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
                               options=options)
 
-    for i in range(len(dates)):
-        # clear out daily data frame and select next date
-        daily = pd.DataFrame(columns=columns)
-
-        # go to game scores for the day
-        driver.get("https://www.basketball-reference.com/boxscores/?month=" + str(dates[i].strftime('%m'))
-                   + '&day=' + str(dates[i].strftime('%d')) + '&year=' + str(dates[i].strftime('%Y')))
+    for i in range(len(seasons)):
+        # go to base game schedule for the season
+        driver.get(f"https://www.basketball-reference.com/leagues/NBA_{seasons[i]}_games.html")
 
         # wait for page to load
         time.sleep(0.5)
 
-        # scrape the daily data
-        scrape_games(dates[i], driver, daily)
+        # get all the months for the season
+        month_elements = driver.find_elements_by_xpath("//*[@class='filter']/div")
+        months = [x.text for x in month_elements]
 
-        daily_game_ids = ', '.join(daily['game_id'])
+        # scrape the season data for all found months
+        yearly = scrape_season_games(driver, months, seasons[i])
 
-        # clear rows where game already exists
+        # get the game_ids for the season
+        yearly_game_ids = "', '".join(yearly['game_id'])
+
+        # clear rows where games already exists
         try:
-            connection_raw.execute(f'delete from nba.games where game_id in "({daily_game_ids})"')
+            connection_raw.execute(f"delete from nba.games where game_id in ('{yearly_game_ids}')")
         except ProgrammingError:
             create_table_games()
 
-        status = write_data(df=daily,
+        status = write_data(df=yearly,
                             name='games',
                             to_csv=False,
                             sql_engine=engine,
@@ -98,8 +151,8 @@ def get_games_data(dates):
                             index=False)
 
         progress(iteration=i,
-                 iterations=len(dates),
-                 iteration_name=dates[i].strftime('%Y-%m-%d'),
+                 iterations=len(seasons),
+                 iteration_name='Season ' + str(seasons[i]),
                  lapsed=time_lapsed(),
                  sql_status=status['sql'],
                  csv_status=status['csv'])
@@ -116,7 +169,7 @@ def get_games_data(dates):
 
 if __name__ == '__main__':
     # column names for games table
-    columns = ['game_id', 'date', 'home_team', 'home_score', 'away_team', 'away_score', 'season']
+    columns = ['game_id', 'game_date', 'home_team', 'home_score', 'away_team', 'away_score', 'season', 'is_playoffs']
 
     # get games dataframe from DB, or build from scratch
     games = initialise_df(table_name='games',
@@ -125,11 +178,7 @@ if __name__ == '__main__':
                           meta=metadata)
 
     # pick up date range from parameters
-    date_range = pd.date_range(start_date_games, end_date_games)
-
-    # skip or re-attempt already scraped days
-    if SKIP_SCRAPED_DAYS:
-        date_range = date_range[~date_range.isin(games.date)]
+    season_range = range(start_season_games, end_season_games)
 
     # get data and write to DB/CSV
-    get_games_data(date_range)
+    write_games_data(season_range)

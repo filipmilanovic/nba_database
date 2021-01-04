@@ -6,12 +6,13 @@ def create_table_games():
     if not engine.dialect.has_table(engine, 'games'):
         sql.Table('games', metadata,
                   Column('game_id', VARCHAR(12), primary_key=True, nullable=False),
-                  Column('date', DATE),
+                  Column('game_date', DATE),
                   Column('home_team', VARCHAR(3)),
                   Column('home_score', SMALLINT),
                   Column('away_team', VARCHAR(3)),
                   Column('away_score', SMALLINT),
-                  Column('season', SMALLINT))
+                  Column('season', SMALLINT),
+                  Column('is_playoffs', SMALLINT))
         metadata.create_all()
 
 

@@ -2,8 +2,8 @@
 from datetime import date
 
 # Dates for table games
-start_date_games = date(2016, 7, 1)
-end_date_games = date(2019, 6, 30)
+start_season_games = 2017
+end_season_games = 2020
 
 # Dates for table games_lineups
 start_date_lineups = date(2016, 7, 1)
