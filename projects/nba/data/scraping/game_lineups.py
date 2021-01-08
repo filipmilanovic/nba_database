@@ -86,7 +86,7 @@ def get_session():
         thread_local.session = r.session()
     else:
         pass
-        return thread_local.session
+    return thread_local.session
 
 
 # get the team lineups then write
@@ -175,6 +175,9 @@ if __name__ == '__main__':
 
     # scrape all lineups and write them to the DB
     write_all_lineups()
+
+    # return to regular output writing
+    sys.stdout.write('\n')
 
     print(Colour.green + 'Lineup Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)

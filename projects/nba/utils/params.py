@@ -14,8 +14,8 @@ start_date_lineups = date(2016, 7, 1)
 end_date_lineups = date(2019, 6, 30)
 
 # Dates for table plays
-start_date_plays = date(2016, 7, 1)
-end_date_plays = date(2019, 6, 30)
+start_date_plays = date(2000, 7, 1)
+end_date_plays = date(2020, 10, 12)
 
 # Control to skip games that are already in DB
 SKIP_SCRAPED_DAYS = True
