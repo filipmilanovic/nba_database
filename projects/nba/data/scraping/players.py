@@ -5,65 +5,102 @@ from modelling.projects.nba.data.scraping import *
 
 def get_player_id(url):
     output = re.search('players/\w/(.*).html', url).group(1)
+
+    log_performance()
     return output
 
 
-def get_player_name(driver):
-    output = driver.find_element_by_xpath('//*[@id="meta"]/div[2]/h1/span').text
+def get_player_name(html):
+    output = html.find('h1', {'itemprop': 'name'}).text.replace('\n', '')
+
+    log_performance()
     return output
 
 
-# this gets used when get_player_name only returns one name, as we need the initial. surname format available
-def get_player_name_exception(driver):
-    # use Twitter as most players use twitter, so this should cover the limited number of edge cases
-    raw = driver.find_element_by_partial_link_text("Twitter")
-    parent = raw.find_element_by_xpath('..').text
-    output = re.search('(.*) ▪', parent).group(1)
+def get_player_dob(html):
+    output = html.find('span', {'itemprop': 'birthDate'}).get('data-birth')
+
+    log_performance()
     return output
 
 
-def get_player_short_name(x):
-    output = left(x, 1) + '. ' + re.search(r' \b(.*)$', x).group(1)
-    return output
-
-
-def get_player_dob(driver):
-    raw = driver.find_element_by_xpath('//*[@id="necro-birth"]').text
-    dob = dt.strptime(raw, '%B %d, %Y')
-    output = dob.strftime('%Y-%m-%d')
-    return output
-
-
-def get_player_height(driver):
-    height = driver.find_element_by_xpath('//*[@itemprop="height"]').text
+def get_player_height(html):
+    height = html.find('span', {'itemprop': 'height'}).text
     inches = int(left(height, 1))*12 + int(re.search('-(\d+)', height).group(1))
     output = int(inches*2.54)
+
+    log_performance()
     return output
 
 
-def get_player_weight(driver):
-    weight = driver.find_element_by_xpath('//*[@itemprop="weight"]').text
+def get_player_weight(html):
+    weight = html.find('span', {'itemprop': 'weight'}).text
     pounds = int(re.search('(\d+)lb', weight).group(1))
     output = int(pounds/2.205)
+
+    log_performance()
     return output
 
 
-def get_player_hand(driver):
+def get_player_hand(html):
     # the line with position contains players shooting hand
-    raw = driver.find_element_by_xpath("//*[contains(text(), 'Position:')]")
-    parent = raw.find_element_by_xpath('..').text
-    output = re.search('Shoots: ([A-z]+)', parent).group(1)
+    output = html.find('strong', text=re.compile(r'Shoots:')).next_sibling.strip()
+
+    log_performance()
     return output
 
 
-def get_player_position(driver):
-    raw = driver.find_element_by_xpath("//*[contains(text(), 'Position:')]")
-    parent = raw.find_element_by_xpath('..').text
-    output = positions[re.search('Position: ([A-z]+)', parent).group(1)]
+def get_player_position(html):
+    raw = html.find('strong', text=re.compile(r'Position:')).next_sibling
+    output = positions[raw.split()[0]]
+
+    log_performance()
     return output
 
 
-def get_player_list(df, driver):
+# need to add undrafted exception
+def get_drafted_year(html):
+    try:
+        output = html.find('a', text=re.compile(r' NBA Draft')).text.split()[0]
+    except AttributeError:
+        output = None
+
+    log_performance()
+    return output
+
+
+def get_draft_pick(html):
+    try:
+        raw = html.find('a', text=re.compile(r' NBA Draft')).previous_sibling
+        output = re.search(r'pick, (\d+).*', raw).group(1)
+    except AttributeError:
+        output = None
+
+    log_performance()
+    return output
+
+
+# need to add no debut exception
+def get_rookie_year(html):
+    try:
+        raw = html.find('strong', text=re.compile(r'NBA Debut:')).next_sibling.get('href')
+        game_id = re.search(r'/boxscores/(.*)\.html', raw).group(1)
+        output = games.loc[games['game_id'] == game_id, 'season'].item()
+    except ValueError:
+        raw = html.find('strong', text=re.compile(r'NBA Debut:')).next_sibling.text
+        debut = dt.strptime(raw, '%B %d, %Y')
+        if debut.month > 6:
+            output = debut.year + 1
+        else:
+            output = debut.year
+    except AttributeError:
+        output = None
+
+    log_performance()
+    return output
+
+
+def get_player_list(df):
     output = list([])
 
     # loop through team/season combinations and build a list of URLs for each player
@@ -71,7 +108,7 @@ def get_player_list(df, driver):
         team = df.team[i]
         season = df.season[i]
         url = f'https://www.basketball-reference.com/teams/{team}/{season}.html'
-        team_list = get_player_url_list(url, driver)
+        team_list = get_player_url_list(url)
         output += team_list
         progress(iteration=i,
                  iterations=len(df),
@@ -93,55 +130,56 @@ def get_player_list(df, driver):
 
     print(Colour.green + 'Generated list of players' + Colour.end)
 
+    log_performance()
     return output
 
 
-def get_player_url_list(url, driver):
-    driver.get(url)
-    # look at all rows under roster for team and return href link
-    player_rows = driver.find_elements_by_xpath('//*[@id="roster"]/tbody/tr/td[1]/a')
-    output = [x.get_attribute("href") for x in player_rows if x.get_attribute("href")]
+def get_player_url_list(url):
+    page = r.get(url)
+    soup = BeautifulSoup(page.content, 'html.parser')
+    roster = soup.find(id='roster')
+    output = [i.findChild('a').get('href') for i in roster.findAll('td', {"data-stat": "player"})]
+
     return output
 
 
-def write_player_data(array, driver):
+def write_player_data(array):
     for i in range(len(array)):
-        driver.get(array[i])
+        # driver.get(array[i])
+        player_url = 'https://www.basketball-reference.com/' + array[i]
+        player_page = r.get(player_url)
+        soup = BeautifulSoup(player_page.content, 'html.parser')
+        player_info = soup.find('div', {'itemtype': 'https://schema.org/Person'})
 
-        # expand info button
-        try:
-            driver.find_element_by_xpath('//*[@id="meta_more_button"]').click()
-        except NoSuchElementException:
-            pass
+        player_id = get_player_id(array[i])
+        player_name = get_player_name(player_info)
+        dob = get_player_dob(player_info)
+        height = get_player_height(player_info)
+        weight = get_player_weight(player_info)
+        hand = get_player_hand(player_info)
+        position = get_player_position(player_info)
+        draft_year = get_drafted_year(player_info)
+        draft_pick = get_draft_pick(player_info)
+        rookie_year = get_rookie_year(player_info)
 
         # build row for player, although currently possible exception where player has one name (e.g. Nene)
-        try:
-            player = [get_player_id(array[i]),  # player_id
-                      get_player_name(driver),  # name
-                      get_player_short_name(get_player_name(driver)),  # short_name
-                      get_player_dob(driver),  # dob
-                      get_player_height(driver),  # height
-                      get_player_weight(driver),  # weight
-                      get_player_hand(driver),  # hand
-                      get_player_position(driver)  # position
-                      ]
-        except AttributeError:
-            player = [get_player_id(array[i]),  # player_id
-                      get_player_name_exception(driver),  # name
-                      get_player_short_name(get_player_name_exception(driver)),  # short_name
-                      get_player_dob(driver),  # dob
-                      get_player_height(driver),  # height
-                      get_player_weight(driver),  # weight
-                      get_player_hand(driver),  # hand
-                      get_player_position(driver)  # position
-                      ]
+        player = [player_id,
+                  player_name,
+                  dob,
+                  height,
+                  weight,
+                  hand,
+                  position,
+                  draft_year,
+                  draft_pick,
+                  rookie_year]
 
         df = pd.DataFrame([player], columns=columns)
 
         try:
             connection_raw.execute(f'delete from nba.players where player_id = "{df.player_id.item()}"')
         except ProgrammingError:
-            pass
+            create_table_players()
 
         status = write_data(df=df,
                             name='players',
@@ -153,7 +191,7 @@ def write_player_data(array, driver):
 
         progress(iteration=i,
                  iterations=len(array),
-                 iteration_name=df.name.item(),
+                 iteration_name=df['player_name'].item(),
                  lapsed=time_lapsed(),
                  sql_status=status['sql'],
                  csv_status=status['csv'])
@@ -164,12 +202,10 @@ def write_player_data(array, driver):
     print(Colour.green + 'Player Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
 
-    # close web driver
-    driver.close()
-
 
 if __name__ == '__main__':
-    columns = ['player_id', 'name', 'short_name', 'dob', 'height', 'weight', 'hand', 'position']
+    columns = ['player_id', 'player_name', 'dob', 'height', 'weight', 'hand', 'position',
+               'draft_year', 'draft_pick', 'rookie_year']
 
     players = initialise_df(table_name='players',
                             columns=columns,
@@ -180,15 +216,17 @@ if __name__ == '__main__':
                       sql_engine=engine,
                       meta=metadata)
 
-    # open web driver
-    web_connection = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
-                                      options=options)
-
     # generate list of unique teams and seasons
     team_season = pd.DataFrame({'team': games.home_team, 'season': games.season}).drop_duplicates().reset_index()
 
+    season_range = range(start_season_players, end_season_players)
+
+    team_season = team_season[team_season['season'].isin(season_range)].reset_index(drop=True)
+
     # get list of players
-    player_list = get_player_list(team_season, web_connection)
+    player_list = get_player_list(team_season)
 
     # write player data
-    write_player_data(player_list, web_connection)
+    write_player_data(player_list)
+
+    write_performance()

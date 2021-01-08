@@ -3,104 +3,137 @@ from modelling.projects.nba import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
 
-def get_game_id(df):
-    short_date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
-    short_name = [x for x in df.home_team]
-    output = short_date + '0' + short_name
+# generate list of 5 starters
+def get_starters_roles():
+    output = ['Starter'] * 5
+
+    log_performance()
     return output
 
 
-def get_starters(game, team, soup):
-    game_id = [game] * 5
-    team_id = [team] * 5
-    player_id = [x.findChildren('th')[0].get('data-append-csv') for x in soup.find_all('tr')
-                 if x.get('data-row') is not None and int(x.get('data-row')) < 5]
-    role = ['Starter'] * 5
-    output = pd.DataFrame({'game_id': game_id,
-                           'team_id': team_id,
-                           'player_id': player_id,
-                           'role': role})
+# generate list of bench players where not a starter and received minutes
+def get_bench_roles(rows):
+    players = rows[5:]
+    bench = [i.findChild('th').get('data-append-csv') for i in players if i.findAll('td', {'data-stat': 'mp'})]
+    output = ['Bench'] * len(bench)
+
+    log_performance()
     return output
 
 
-def get_bench(game, team, soup):
-    player_id = [x.findChildren('th')[0].get('data-append-csv') for x in soup.find_all('tr')
-                 if x.get('data-row') is not None and int(x.get('data-row')) > 5]
-    players = len(player_id)-1
-    game_id = [game] * players
-    team_id = [team] * players
+# generate list of dnp players where reason for not playing provided
+def get_dnp_roles(rows):
+    players = rows[5:]
+    dnp = [i.findChild('th').get('data-append-csv') for i in players if i.findAll('td', {'data-stat': 'reason'})]
+    output = ['DNP'] * len(dnp)
 
-    dnp = ['DNP' for x in soup.find_all('tr') if len(x.findChildren('td')) == 1]
-
-    role = ['Bench'] * (players - len(dnp)) + dnp
-
-    output = pd.DataFrame({'game_id': game_id,
-                           'team_id': team_id,
-                           'player_id': pd.Series(player_id).dropna(),
-                           'role': role})
+    log_performance()
     return output
 
 
-def scrape_lineups(driver, game_id):
-    output = pd.DataFrame(columns=columns)
+# find box scores for each team, then combine player roles and write
+def get_team_roles(html, team_id, game_id):
+    # get box score
+    box = html.find(id=f'box-{team_id}-game-basic').findChild('tbody')
 
-    # get home team information
-    home_team = right(game_id, 3)
-    home_box = driver.find_element_by_xpath(f'//*[@id="div_box-{home_team}-game-basic"]')
-    home_soup = BeautifulSoup(home_box.get_attribute('innerHTML'), 'html.parser')
+    # return player rows where no class available (i.e. section header)
+    players = [i for i in box.findChildren('tr') if i.get('class') is None]
 
-    # get away team information
-    away_team = games.away_team[games.game_id == game_id].item()
-    away_box = driver.find_element_by_xpath(f'//*[@id="div_box-{away_team}-game-basic"]')
-    away_soup = BeautifulSoup(away_box.get_attribute('innerHTML'), 'html.parser')
+    # get player ids from each row header
+    player_ids = [i.findChild('th').get('data-append-csv') for i in players]
 
-    output = output.append(get_starters(game_id, home_team, home_soup))  # home starters
-    output = output.append(get_bench(game_id, home_team, home_soup))  # home bench
-    output = output.append(get_starters(game_id, away_team, away_soup))  # away starters
-    output = output.append(get_bench(game_id, away_team, away_soup))  # away bench
+    # get lists of player roles and combine
+    starters = get_starters_roles()
+    bench = get_bench_roles(players)
+    dnp = get_dnp_roles(players)
+    roles = starters + bench + dnp
 
+    # create dataframe for teams lineups
+    output = pd.DataFrame([[game_id]*len(roles),
+                           [team_id]*len(roles),
+                           player_ids,
+                           roles]).T
+
+    output.columns = columns
+
+    log_performance()
     return output
 
 
-def get_lineups_data(iterations):
-    # selenium driver
-    driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
-                              options=options)
+# get contents of page
+def get_page_content(game_id, session):
+    # get url
+    url = f'https://www.basketball-reference.com/boxscores/{game_id}.html'
 
-    for i in range(len(iterations)):
-        # load website using index
-        driver.get("https://www.basketball-reference.com/boxscores/" + iterations[i] + ".html")
+    page = session.get(url)
+    output = BeautifulSoup(page.content, 'lxml')
 
-        game_lineups = scrape_lineups(driver, iterations[i])
+    log_performance()
+    return output
 
-        # game_lineups = pd.DataFrame(game_lineups, columns=['plays'])
-        game_lineups['game_id'] = iterations[i]
 
-        # clear rows where play data already exists
-        try:
-            connection_raw.execute(f'delete from nba.games_lineups where game_id = "{iterations[i]}"')
-        except ProgrammingError:
-            pass
+# get team names by home/away
+def get_teams(game_id):
+    output = games.loc[games['game_id'] == game_id, ['home_team', 'away_team']]
 
-        status = write_data(df=game_lineups,
-                            name='games_lineups',
-                            to_csv=False,
-                            sql_engine=engine,
-                            db_schema='nba',
-                            if_exists='append',
-                            index=False)
+    log_performance()
+    return output
 
-        progress(iteration=i,
-                 iterations=len(iterations),
-                 iteration_name=iterations[i],
-                 lapsed=time_lapsed(),
-                 sql_status=status['sql'],
-                 csv_status=status['csv'])
 
-    # return to regular output writing
-    sys.stdout.write('\n')
+# open session for each thread
+def get_session():
+    if not hasattr(thread_local, "session"):
+        thread_local.session = r.session()
+    else:
+        pass
+        return thread_local.session
 
-    driver.close()
+
+# get the team lineups then write
+def write_lineup(iteration):
+    # open session for thread
+    session = get_session()
+
+    # get game_id
+    game_id = game_ids[iteration]
+
+    # get page content
+    soup = get_page_content(game_id, session)
+
+    # get teams
+    teams = get_teams(game_id)
+    home_team = teams['home_team'].item()
+    away_team = teams['away_team'].item()
+
+    # get lineups for each team
+    home_roles = get_team_roles(soup, home_team, game_id)
+    away_roles = get_team_roles(soup, away_team, game_id)
+
+    output = home_roles.append(away_roles)
+
+    status = write_data(df=output,
+                        name='games_lineups',
+                        to_csv=False,
+                        sql_engine=engine,
+                        db_schema='nba',
+                        if_exists='append',
+                        index=False)
+
+    progress(iteration=iteration,
+             iterations=len(game_ids),
+             iteration_name=game_id,
+             lapsed=time_lapsed(),
+             sql_status=status['sql'],
+             csv_status=status['csv'])
+
+    log_performance()
+    return output
+
+
+def write_all_lineups():
+    iterations = range(len(game_ids))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        executor.map(write_lineup, iterations)
 
 
 if __name__ == '__main__':
@@ -121,18 +154,29 @@ if __name__ == '__main__':
     # pick up date range from parameters
     date_range = pd.date_range(start_date_lineups, end_date_lineups)
 
-    # load games in selected date range
-    games = games.loc[games.date.isin(date_range.strftime('%Y-%m-%d'))].reset_index()
-
     # create game index for accessing website
-    game_ids = get_game_id(games)
+    game_ids = games['game_id']
 
     # skip games that have already been scraped
     if SKIP_SCRAPED_DAYS:
-        game_ids = game_ids[~game_ids.isin(games_lineups.game_id)]
+        game_ids = game_ids[~game_ids.isin(games_lineups.game_id)].reset_index(drop=True)
+    else:  # clear rows where play data already exists
+        clear_game_ids = "', '".join(game_ids)
+        try:
+            connection_raw.execute(f"delete from nba.games_lineups where game_id in ('{clear_game_ids}')")
+        except ProgrammingError:
+            pass
 
-    # get data and write to DB/CSV
-    get_lineups_data(game_ids)
+    # create table in DB if not exists
+    create_table_games_lineups()
+
+    # defining threads
+    thread_local = threading.local()
+
+    # scrape all lineups and write them to the DB
+    write_all_lineups()
 
     print(Colour.green + 'Lineup Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
+
+    write_performance()

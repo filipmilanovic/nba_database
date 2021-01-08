@@ -68,3 +68,12 @@ Team('SAS', 'San Antonio', 'San Antonio Spurs', '(29.426944, -98.4375 )')
 Team('TOR', 'Toronto', 'Toronto Raptors', '(43.643333, -79.379167)')
 Team('UTA', 'Utah', 'Utah Jazz', '(40.768333, -111.901111)')
 Team('WAS', 'Washington', 'Washington Wizards', '(38.898056, -77.020833)')
+
+# deprecated teams
+Team('CHA', 'Charlotte', 'Charlotte Bobcats', '(35.186389, -80.912778)')
+Team('CHH', 'Charlotte', 'Charlotte Hornets', '(35.186389, -80.912778)')
+Team('NJN', 'New Jersey', 'New Jersey Nets', '(40.811667, -74.0675)')
+Team('NOH', 'New Orleans', 'New Orleans Hornets', '(29.948889, -90.081944)')
+Team('NOK', 'New Orleans/Oklahoma City', 'New Orleans/Oklahoma City Hornets', '(35.463333, -97.515)')
+Team('SEA', 'Seattle', 'Seattle Supersonics', '(47.622, -122.354)')
+Team('VAN', 'Vancouver', 'Vancouver Grizzlies', '(49.277778, -123.108889)')

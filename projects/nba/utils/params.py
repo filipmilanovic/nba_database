@@ -5,6 +5,10 @@ from datetime import date
 start_season_games = 2001
 end_season_games = 2021
 
+# Seasons for player data
+start_season_players = 2001
+end_season_players = 2020
+
 # Dates for table games_lineups
 start_date_lineups = date(2016, 7, 1)
 end_date_lineups = date(2019, 6, 30)
