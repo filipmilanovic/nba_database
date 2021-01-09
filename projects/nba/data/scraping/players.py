@@ -3,13 +3,6 @@ from modelling.projects.nba import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
 
-def get_player_id(url):
-    output = re.search('players/\w/(.*).html', url).group(1)
-
-    log_performance()
-    return output
-
-
 def get_player_name(html):
     output = html.find('h1', {'itemprop': 'name'}).text.replace('\n', '')
 
@@ -101,32 +94,10 @@ def get_rookie_year(html):
 
 
 def get_player_list(df):
-    output = list([])
+    output = list(set(df['player_id']))
 
-    # loop through team/season combinations and build a list of URLs for each player
-    for i in range(len(df)):
-        team = df.team[i]
-        season = df.season[i]
-        url = f'https://www.basketball-reference.com/teams/{team}/{season}.html'
-        team_list = get_player_url_list(url)
-        output += team_list
-        progress(iteration=i,
-                 iterations=len(df),
-                 iteration_name=f'{team} {season}',
-                 lapsed=time_lapsed(),
-                 sql_status='',
-                 csv_status='')
-
-    # make it a distinct list to save time
-    output = pd.Series(sorted(list(set(output))))
-
-    # skip players already in DB
     if SKIP_SCRAPED_PLAYERS:
-        names = [re.search('players/[a-z]/(.*)\.html', x).group(1) for x in output]
-        output = output[~pd.Series(names).isin(players.player_id)].reset_index(drop=True)
-
-    # return to regular output writing
-    sys.stdout.write('\n')
+        output = pd.Series(output)[~pd.Series(output).isin(players.player_id)].reset_index(drop=True)
 
     print(Colour.green + 'Generated list of players' + Colour.end)
 
@@ -134,73 +105,95 @@ def get_player_list(df):
     return output
 
 
-def get_player_url_list(url):
-    page = r.get(url)
-    soup = BeautifulSoup(page.content, 'html.parser')
-    roster = soup.find(id='roster')
-    output = [i.findChild('a').get('href') for i in roster.findAll('td', {"data-stat": "player"})]
+def get_player_url_list(series):
+    initial = [left(i, 1) for i in series]
+    output = [f'players/{initial[i]}/{series[i]}.html' for i in range(len(series))]
 
+    print(Colour.green + 'Generated list of URLs' + Colour.end)
+
+    log_performance()
     return output
 
 
-def write_player_data(array):
-    for i in range(len(array)):
-        # driver.get(array[i])
-        player_url = 'https://www.basketball-reference.com/' + array[i]
-        player_page = r.get(player_url)
-        soup = BeautifulSoup(player_page.content, 'html.parser')
-        player_info = soup.find('div', {'itemtype': 'https://schema.org/Person'})
+# open session for each thread
+def get_session():
+    if not hasattr(thread_local, "session"):
+        thread_local.session = r.session()
+    else:
+        pass
+    return thread_local.session
 
-        player_id = get_player_id(array[i])
-        player_name = get_player_name(player_info)
-        dob = get_player_dob(player_info)
-        height = get_player_height(player_info)
-        weight = get_player_weight(player_info)
-        hand = get_player_hand(player_info)
-        position = get_player_position(player_info)
-        draft_year = get_drafted_year(player_info)
-        draft_pick = get_draft_pick(player_info)
-        rookie_year = get_rookie_year(player_info)
 
-        # build row for player, although currently possible exception where player has one name (e.g. Nene)
-        player = [player_id,
-                  player_name,
-                  dob,
-                  height,
-                  weight,
-                  hand,
-                  position,
-                  draft_year,
-                  draft_pick,
-                  rookie_year]
+def get_page_content(url, session):
+    page = session.get(url)
+    output = BeautifulSoup(page.content, 'lxml')
 
-        df = pd.DataFrame([player], columns=columns)
+    log_performance()
+    return output
 
-        try:
-            connection_raw.execute(f'delete from nba.players where player_id = "{df.player_id.item()}"')
-        except ProgrammingError:
-            create_table_players()
 
-        status = write_data(df=df,
-                            name='players',
-                            to_csv=False,
-                            sql_engine=engine,
-                            db_schema='nba',
-                            if_exists='append',
-                            index=False)
+def get_player_info(soup):
+    output = soup.find('div', {'itemtype': 'https://schema.org/Person'})
 
-        progress(iteration=i,
-                 iterations=len(array),
-                 iteration_name=df['player_name'].item(),
-                 lapsed=time_lapsed(),
-                 sql_status=status['sql'],
-                 csv_status=status['csv'])
+    log_performance()
+    return output
 
-    # return to regular output writing
-    sys.stdout.write('\n')
 
-    print(Colour.green + 'Player Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
-          + ' seconds taken' + Colour.end)
+def write_player_data(iteration):
+    # open session for thread
+    session = get_session()
+
+    url = 'https://www.basketball-reference.com/' + url_list[iteration]
+
+    page = get_page_content(url, session)
+
+    player_info = get_player_info(page)
+
+    player_id = player_list[iteration]
+    player_name = get_player_name(player_info)
+    dob = get_player_dob(player_info)
+    height = get_player_height(player_info)
+    weight = get_player_weight(player_info)
+    hand = get_player_hand(player_info)
+    position = get_player_position(player_info)
+    draft_year = get_drafted_year(player_info)
+    draft_pick = get_draft_pick(player_info)
+    rookie_year = get_rookie_year(player_info)
+
+    # build row for player, although currently possible exception where player has one name (e.g. Nene)
+    player = [player_id,
+              player_name,
+              dob,
+              height,
+              weight,
+              hand,
+              position,
+              draft_year,
+              draft_pick,
+              rookie_year]
+
+    df = pd.DataFrame([player], columns=columns)
+
+    status = write_data(df=df,
+                        name='players',
+                        to_csv=False,
+                        sql_engine=engine,
+                        db_schema='nba',
+                        if_exists='append',
+                        index=False)
+
+    progress(iteration=iteration,
+             iterations=len(url_list),
+             iteration_name=player_name,
+             lapsed=time_lapsed(),
+             sql_status=status['sql'],
+             csv_status=status['csv'])
+
+
+def write_all_players():
+    iterations = range(len(url_list))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        executor.map(write_player_data, iterations)
 
 
 if __name__ == '__main__':
@@ -216,17 +209,26 @@ if __name__ == '__main__':
                       sql_engine=engine,
                       meta=metadata)
 
-    # generate list of unique teams and seasons
-    team_season = pd.DataFrame({'team': games.home_team, 'season': games.season}).drop_duplicates().reset_index()
-
-    season_range = range(start_season_players, end_season_players)
-
-    team_season = team_season[team_season['season'].isin(season_range)].reset_index(drop=True)
+    games_lineups = load_data(df='games_lineups',
+                              sql_engine=engine,
+                              meta=metadata)
 
     # get list of players
-    player_list = get_player_list(team_season)
+    player_list = get_player_list(games_lineups)
 
-    # write player data
-    write_player_data(player_list)
+    # get list of urls
+    url_list = get_player_url_list(player_list)
+
+    # defining threads
+    thread_local = threading.local()
+
+    # scrape all lineups and write them to the DB
+    write_all_players()
+
+    # return to regular output writing
+    sys.stdout.write('\n')
+
+    print(Colour.green + 'Player Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+          + ' seconds taken' + Colour.end)
 
     write_performance()
