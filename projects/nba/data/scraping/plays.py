@@ -3,80 +3,111 @@ from modelling.projects.nba import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
 
-def get_game_id(df):
-    short_date = pd.to_datetime(df.date).dt.strftime('%Y%m%d')
-    short_name = [x for x in df.home_team]
-    return short_date + '0' + short_name
-
-
-def get_player_id(x, pos):
+# get the nth player_id from a play
+def get_player_id(x, n):
+    # get all rows
     row_elements = x.findChildren('td')
+
+    # get all associated href elements (which include player_id in link)
     href_elements = [y.findChildren('a') for y in row_elements if y.findChildren('a')]
+
+    # extract player_id if there is a href link
     try:
-        url = [player[pos].get('href') for player in href_elements]
-        output = re.search('players/\w/(.*).html', url[0]).group(1)
+        url = [player[n].get('href') for player in href_elements]
+        output = re.search(r'players/\w/(.*).html', url[0]).group(1)
     except (IndexError, AttributeError):
         output = None
+
+    log_performance()
     return output
 
 
-def scrape_plays(driver):
-    soup = BeautifulSoup(driver.page_source, 'html.parser')
+# open session for each thread
+def get_session():
+    if not hasattr(thread_local, "session"):
+        thread_local.session = r.session()
+    else:
+        pass
+    return thread_local.session
+
+
+# get contents of page
+def get_page_content(game_id, session):
+    # get url
+    url = f'https://www.basketball-reference.com/boxscores/pbp/{game_id}.html'
+
+    page = session.get(url)
+    output = BeautifulSoup(page.content, 'lxml')
+
+    log_performance()
+    return output
+
+
+# get play by play table from soup
+def get_table_content(soup):
+    output = soup.find('table', {'id': 'pbp'})
+
+    log_performance()
+    return output
+
+
+def get_raw_plays(soup):
     # raw plays
-    plays = [x.getText().encode('utf-8') for x in soup.find_all('tr')
-             if x.get('data-row') is not None]
+    plays = [x.getText() for x in soup.find_all('tr')]
+
     # scrape first player_id
-    player_1 = [get_player_id(x, 0) for x in soup.find_all('tr')
-                if x.get('data-row') is not None]
+    player_1 = [get_player_id(x, 0) for x in soup.find_all('tr')]
+
     # scrape second player_id
-    player_2 = [get_player_id(x, 1) for x in soup.find_all('tr')
-                if x.get('data-row') is not None]
+    player_2 = [get_player_id(x, 1) for x in soup.find_all('tr')]
+
     # scrape third player_id
-    player_3 = [get_player_id(x, 2) for x in soup.find_all('tr')
-                if x.get('data-row') is not None]
+    player_3 = [get_player_id(x, 2) for x in soup.find_all('tr')]
+
     output = list(zip(plays, player_1, player_2, player_3))
+
+    log_performance()
     return output
 
 
-def get_plays_data(iterations):
-    # selenium driver
-    driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
-                              options=options)
+def write_raw_plays(iteration):
+    # open session for thread
+    session = get_session()
 
-    for i in range(len(iterations)):
-        # load website using index
-        driver.get("https://www.basketball-reference.com/boxscores/pbp/" + iterations[i] + ".html")
+    # get game_id
+    game_id = game_ids[iteration]
 
-        game_plays = scrape_plays(driver)
+    # get page html for game
+    soup = get_page_content(game_id, session)
 
-        game_plays = pd.DataFrame(game_plays, columns=['plays', 'player_1', 'player_2', 'player_3'])
-        game_plays['game_id'] = iterations[i]
+    # get play by play table html from page
+    table = get_table_content(soup)
 
-        # clear rows where play data already exists
-        try:
-            connection_raw.execute(f'delete from nba_raw.plays_raw where game_id = "{iterations[i]}"')
-        except ProgrammingError:
-            pass
+    # scrape the raw plays and tidy the dataframe
+    game_plays = get_raw_plays(table)
+    game_plays = pd.DataFrame(game_plays, columns=['plays', 'player_1', 'player_2', 'player_3'])
+    game_plays['game_id'] = game_id
 
-        status = write_data(df=game_plays,
-                            name='plays_raw',
-                            to_csv=False,
-                            sql_engine=engine_raw,
-                            db_schema='nba_raw',
-                            if_exists='append',
-                            index=False)
+    status = write_data(df=game_plays,
+                        name='plays_raw',
+                        to_csv=False,
+                        sql_engine=engine_raw,
+                        db_schema='nba_raw',
+                        if_exists='append',
+                        index=False)
 
-        progress(iteration=i,
-                 iterations=len(iterations),
-                 iteration_name=iterations[i],
-                 lapsed=time_lapsed(),
-                 sql_status=status['sql'],
-                 csv_status=status['csv'])
+    progress(iteration=iteration,
+             iterations=len(game_ids),
+             iteration_name=game_ids[iteration],
+             lapsed=time_lapsed(),
+             sql_status=status['sql'],
+             csv_status=status['csv'])
 
-    # return to regular output writing
-    sys.stdout.write('\n')
 
-    driver.close()
+def write_all_raw_plays():
+    iterations = range(len(game_ids))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        executor.map(write_raw_plays, iterations)
 
 
 if __name__ == '__main__':
@@ -98,17 +129,31 @@ if __name__ == '__main__':
     date_range = pd.date_range(start_date_plays, end_date_plays)
 
     # load games in selected date range
-    games = games.loc[games.date.isin(date_range.strftime('%Y-%m-%d'))].reset_index(drop=True)
+    games = games.loc[pd.to_datetime(games['game_date']).isin(date_range)].reset_index(drop=True)
 
     # create game index for accessing website
-    game_id = get_game_id(games)
+    game_ids = games['game_id']
 
     # skip games that have already been scraped
     if SKIP_SCRAPED_DAYS:
-        game_id = game_id[~game_id.isin(plays_raw.game_id)].reset_index(drop=True)
+        game_ids = game_ids[~game_ids.isin(plays_raw.game_id)].reset_index(drop=True)
+    else:  # clear rows where play data already exists
+        clear_game_ids = "', '".join(game_ids)
+        try:
+            connection_raw.execute(f"delete from nba_raw.plays_raw where game_id in ('{clear_game_ids}')")
+        except ProgrammingError:
+            pass
 
-    # get data and write to DB/CSV
-    get_plays_data(game_id)
+    # defining threads
+    thread_local = threading.local()
+
+    # scrape all lineups and write them to the DB
+    write_all_raw_plays()
+
+    # return to regular output writing
+    sys.stdout.write('\n')
 
     print(Colour.green + 'Game Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
+
+    write_performance()
