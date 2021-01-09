@@ -45,7 +45,7 @@ combination in the `nba.games`, then scrapes information about each player in th
 [params.py](projects/nba/utils/params.py)) for seasons existing in `nba.games`, then writes the data to `nba.odds` in
 the DB.
 
-[scraping.game_lineups](projects/nba/data/scraping/game_lineups.py) - this goes through the box score for each game in
+[scraping.game_lineups](projects/nba/data/scraping/games_lineups.py) - this goes through the box score for each game in
 `nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to
 `nba.games_lineups` in the DB.
 

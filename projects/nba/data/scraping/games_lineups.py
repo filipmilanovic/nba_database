@@ -151,11 +151,11 @@ if __name__ == '__main__':
                       sql_engine=engine,
                       meta=metadata)
 
-    # pick up date range from parameters
-    date_range = pd.date_range(start_date_lineups, end_date_lineups)
-
     # create game index for accessing website
     game_ids = games['game_id']
+
+    # create table in DB if not exists
+    create_table_games_lineups()
 
     # skip games that have already been scraped
     if SKIP_SCRAPED_DAYS:
@@ -166,9 +166,6 @@ if __name__ == '__main__':
             connection_raw.execute(f"delete from nba.games_lineups where game_id in ('{clear_game_ids}')")
         except ProgrammingError:
             pass
-
-    # create table in DB if not exists
-    create_table_games_lineups()
 
     # defining threads
     thread_local = threading.local()

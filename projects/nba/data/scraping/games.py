@@ -181,7 +181,7 @@ if __name__ == '__main__':
                           meta=metadata)
 
     # pick up date range from parameters
-    season_range = range(start_season_games, end_season_games)
+    season_range = range(start_season_games, end_season_games+1)
 
     # get data and write to DB/CSV
     write_games_data(season_range)

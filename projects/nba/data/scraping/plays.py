@@ -125,18 +125,12 @@ if __name__ == '__main__':
                       sql_engine=engine,
                       meta=metadata)
 
-    # pick up date range from parameters
-    date_range = pd.date_range(start_date_plays, end_date_plays)
-
-    # load games in selected date range
-    games = games.loc[pd.to_datetime(games['game_date']).isin(date_range)].reset_index(drop=True)
-
     # create game index for accessing website
     game_ids = games['game_id']
 
     # skip games that have already been scraped
     if SKIP_SCRAPED_DAYS:
-        game_ids = game_ids[~game_ids.isin(plays_raw.game_id)].reset_index(drop=True)
+        game_ids = game_ids[~game_ids.isin(plays_raw['game_id'])].reset_index(drop=True)
     else:  # clear rows where play data already exists
         clear_game_ids = "', '".join(game_ids)
         try:
