@@ -96,9 +96,6 @@ def get_rookie_year(html):
 def get_player_list(df):
     output = list(set(df['player_id']))
 
-    if SKIP_SCRAPED_PLAYERS:
-        output = pd.Series(output)[~pd.Series(output).isin(players.player_id)].reset_index(drop=True)
-
     print(Colour.green + 'Generated list of players' + Colour.end)
 
     log_performance()
@@ -213,8 +210,20 @@ if __name__ == '__main__':
                               sql_engine=engine,
                               meta=metadata)
 
+    # create table in DB if not exists
+    create_table_players()
+
     # get list of players
     player_list = get_player_list(games_lineups)
+
+    if SKIP_SCRAPED_PLAYERS:
+        player_list = pd.Series(player_list)[~pd.Series(player_list).isin(players['player_id'])].reset_index(drop=True)
+    else:  # clear rows where play data already exists
+        clear_player_ids = "', '".join(player_list)
+        try:
+            connection_raw.execute(f"delete from nba.players where player_id in ('{clear_player_ids}')")
+        except ProgrammingError:
+            pass
 
     # get list of urls
     url_list = get_player_url_list(player_list)
