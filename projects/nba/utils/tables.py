@@ -6,12 +6,48 @@ def create_table_games():
     if not engine.dialect.has_table(engine, 'games'):
         sql.Table('games', metadata,
                   Column('game_id', VARCHAR(12), primary_key=True, nullable=False),
-                  Column('date', DATE),
+                  Column('game_date', DATE),
                   Column('home_team', VARCHAR(3)),
                   Column('home_score', SMALLINT),
                   Column('away_team', VARCHAR(3)),
                   Column('away_score', SMALLINT),
-                  Column('season', SMALLINT))
+                  Column('season', SMALLINT),
+                  Column('is_playoffs', SMALLINT))
+        metadata.create_all()
+
+
+def create_table_games_lineups():
+    if not engine.dialect.has_table(engine, 'games_lineups'):
+        sql.Table('games_lineups', metadata,
+                  Column('game_id', VARCHAR(12), index=True, nullable=False),
+                  Column('team_id', VARCHAR(3)),
+                  Column('player_id', VARCHAR(9)),
+                  Column('role', VARCHAR(7)))
+        metadata.create_all()
+
+
+def create_table_odds():
+    if not engine.dialect.has_table(engine, 'odds'):
+        sql.Table('odds', metadata,
+                  Column('game_id', VARCHAR(12), index=True, nullable=False),
+                  Column('home_odds', DECIMAL(4, 2)),
+                  Column('away_odds', DECIMAL(4, 2)))
+        metadata.create_all()
+
+
+def create_table_players():
+    if not engine.dialect.has_table(engine, 'players'):
+        sql.Table('players', metadata,
+                  Column('player_id', VARCHAR(9), primary_key=True, nullable=False),
+                  Column('player_name', VARCHAR(64)),
+                  Column('dob', DATE),
+                  Column('height', SMALLINT),
+                  Column('weight', SMALLINT),
+                  Column('hand', VARCHAR(5)),
+                  Column('position', VARCHAR(16)),
+                  Column('draft_year', SMALLINT),
+                  Column('draft_pick', SMALLINT),
+                  Column('rookie_year', SMALLINT))
         metadata.create_all()
 
 
@@ -30,3 +66,13 @@ def create_table_plays():
                   Column('event_detail', VARCHAR(32)),
                   Column('possession', SMALLINT))
         metadata.create_all()
+
+
+def create_table_teams():
+    sql.Table('teams', metadata,
+              Column('team_id', VARCHAR(3), primary_key=True, nullable=False),
+              Column('short_name', VARCHAR(32)),
+              Column('full_name', VARCHAR(33)),
+              Column('coordinates', VARCHAR(32)))
+    metadata.drop_all()
+    metadata.create_all()
