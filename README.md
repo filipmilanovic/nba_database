@@ -79,3 +79,4 @@ becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes t
 * Occasionally Basketball Reference has a shot that doesn't show up, or a make that is incorrectly counted as a 2/3
 * Missing rebounds when a shot doesn't show up in Basketball Reference, or there is a substitution 'after' a missed FT,
   so the shooter is not picked up
+* Odds scraping occasionally misses a page as the page doesn't load in time

@@ -10,4 +10,4 @@
 /**/output/*.csv
 
 # environment variables
-**/environment.py
+/**/environment.py

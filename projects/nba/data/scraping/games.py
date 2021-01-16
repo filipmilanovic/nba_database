@@ -117,57 +117,44 @@ def scrape_season_games(driver, months, season):
     return output
 
 
-def write_games_data(seasons):
-    # initialise selenium driver
+def write_season_data(iteration):
     driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
                               options=options)
 
-    for i in range(len(seasons)):
-        # go to base game schedule for the season
-        driver.get(f"https://www.basketball-reference.com/leagues/NBA_{seasons[i]}_games.html")
+    # go to base game schedule for the season
+    driver.get(f"https://www.basketball-reference.com/leagues/NBA_{season_range[iteration]}_games.html")
 
-        # wait for page to load
-        time.sleep(0.5)
+    # wait for page to load
+    time.sleep(0.5)
 
-        # get all the months for the season
-        month_elements = driver.find_elements_by_xpath("//*[@class='filter']/div")
-        months = [x.text for x in month_elements]
+    # get all the months for the season
+    month_elements = driver.find_elements_by_xpath("//*[@class='filter']/div")
+    months = [x.text for x in month_elements]
 
-        # scrape the season data for all found months
-        yearly = scrape_season_games(driver, months, seasons[i])
+    # scrape the season data for all found months
+    yearly = scrape_season_games(driver, months, season_range[iteration])
 
-        # get the game_ids for the season
-        yearly_game_ids = "', '".join(yearly['game_id'])
+    status = write_data(df=yearly,
+                        name='games',
+                        to_csv=False,
+                        sql_engine=engine,
+                        db_schema='nba',
+                        if_exists='append',
+                        index=False)
 
-        # clear rows where games already exists
-        try:
-            connection_raw.execute(f"delete from nba.games where game_id in ('{yearly_game_ids}')")
-        except ProgrammingError:
-            create_table_games()
+    progress(iteration=iteration,
+             iterations=len(season_range),
+             iteration_name='Season ' + str(season_range[iteration]),
+             lapsed=time_lapsed(),
+             sql_status=status['sql'],
+             csv_status=status['csv'])
 
-        status = write_data(df=yearly,
-                            name='games',
-                            to_csv=False,
-                            sql_engine=engine,
-                            db_schema='nba',
-                            if_exists='append',
-                            index=False)
 
-        progress(iteration=i,
-                 iterations=len(seasons),
-                 iteration_name='Season ' + str(seasons[i]),
-                 lapsed=time_lapsed(),
-                 sql_status=status['sql'],
-                 csv_status=status['csv'])
-
-    # return to regular output writing
-    sys.stdout.write('\n')
-
-    # close web driver
-    driver.close()
-
-    print(Colour.green + 'Game Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
-          + ' seconds taken' + Colour.end)
+def write_all_games_data():
+    iterations = range(len(season_range))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        # initialise selenium driver
+        executor.map(write_season_data, iterations)
 
 
 if __name__ == '__main__':
@@ -180,8 +167,31 @@ if __name__ == '__main__':
                           sql_engine=engine,
                           meta=metadata)
 
+    create_table_games()
+
     # pick up date range from parameters
     season_range = range(start_season_games, end_season_games+1)
 
-    # get data and write to DB/CSV
-    write_games_data(season_range)
+    # get the seasons to clear
+    clear_seasons = "', '".join([str(i) for i in season_range])
+
+    # clear rows where games already exists
+    try:
+        connection_raw.execute(f"delete from nba.games where season in ('{clear_seasons}')")
+    except ProgrammingError:
+        pass
+
+    # defining threads
+    thread_local = threading.local()
+
+    # scrape all lineups and write them to the DB
+    write_all_games_data()
+
+    webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
+                     options=options).quit()
+
+    # return to regular output writing
+    sys.stdout.write('\n')
+
+    print(Colour.green + 'Game Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+          + ' seconds taken' + Colour.end)

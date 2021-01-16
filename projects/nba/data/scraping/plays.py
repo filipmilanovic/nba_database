@@ -129,7 +129,7 @@ if __name__ == '__main__':
     game_ids = games['game_id']
 
     # skip games that have already been scraped
-    if SKIP_SCRAPED_DAYS:
+    if SKIP_SCRAPED_GAMES:
         game_ids = game_ids[~game_ids.isin(plays_raw['game_id'])].reset_index(drop=True)
     else:  # clear rows where play data already exists
         clear_game_ids = "', '".join(game_ids)
