@@ -4,9 +4,9 @@ from modelling.projects.nba import *  # import all project specific utils
 
 # LOADING AND TIDYING OF RAW PLAYS TEXT
 # get the plays for specified game
-def get_raw_plays(game_id):
-    home_team = games.home_team[games.game_id == game_id].item()
-    away_team = games.away_team[games.game_id == game_id].item()
+def get_raw_plays(plays_raw, games, game_id):
+    home_team = games.loc[games['game_id'] == game_id, 'home_team'].item()
+    away_team = games.loc[games['game_id'] == game_id, 'away_team'].item()
 
     # define global team_names to be used
     global team_names
@@ -179,7 +179,7 @@ def get_shot_detail(play):
 
 # PRODUCE ROWS FOR EACH DIFFERENT TYPE OF EVENT
 # Produce the 'Period Start' line in order to get the correct period
-def get_period_start(row):
+def get_period_start(cols, row):
     play = row['plays']
     game_id = row['game_id']
     array = [None,  # play_id
@@ -194,14 +194,14 @@ def get_period_start(row):
              None,  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
 # Produce the 'Period End' line in order to get the correct period end
-def get_period_end(row):
+def get_period_end(cols, row):
     game_id = row['game_id']
     array = [None,  # play_id
              game_id,  # game_id,
@@ -215,14 +215,14 @@ def get_period_end(row):
              None,  # event_detail
              1  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
 # get data for a jump ball
-def get_jump_ball_data(row):
+def get_jump_ball_data(cols, games_lineups, row):
     game_id = row['game_id']
     player_1 = row['player_1']
     player_2 = row['player_2']
@@ -257,7 +257,7 @@ def get_jump_ball_data(row):
              losing_player_id,  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
@@ -398,7 +398,7 @@ def get_block_data(row):
 
 
 # combine all shot related information to produce detailed rows of data
-def get_shot_data(row):
+def get_shot_data(cols, row):
     play = row['plays']
     arrays = []
     # label FT or FG
@@ -431,14 +431,14 @@ def get_shot_data(row):
             arrays = [shot, make, assist]
 
     # create dataframe of given rows
-    output = pd.DataFrame(arrays, columns=columns)
+    output = pd.DataFrame(arrays, columns=cols)
 
     log_performance()
     return output
 
 
 # get who rebounded the ball, with whose shot they rebounded
-def get_rebound_data(row, y):
+def get_rebound_data(cols, row, y):
     game_id = row['game_id']
     shooter = None
     play = row['plays']
@@ -462,13 +462,13 @@ def get_rebound_data(row, y):
              shooter,  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
-def get_turnover_data(row):
+def get_turnover_data(cols, row):
     game_id = row['game_id']
     play = row['plays']
     player_id = row['player_1']
@@ -485,13 +485,13 @@ def get_turnover_data(row):
              detail.group(1),  # event_detail
              1  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
-def get_steal_data(row):
+def get_steal_data(cols, row):
     game_id = row['game_id']
     turnover_player_id = row['player_1']
     player_id = row['player_2']
@@ -507,13 +507,13 @@ def get_steal_data(row):
              turnover_player_id,  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
-def get_foul_data(row):
+def get_foul_data(cols, row):
     game_id = row['game_id']
     play = row['plays']
     player_id = row['player_1']
@@ -546,13 +546,13 @@ def get_foul_data(row):
              fouled_player_id,  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
-def get_violation_data(row):
+def get_violation_data(cols, row):
     game_id = row['game_id']
     play = row['plays']
     player_id = row['player_1']
@@ -568,13 +568,13 @@ def get_violation_data(row):
              re.search(r'\((.*)\)', play).group(1),  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
-def get_substitution_data(row):
+def get_substitution_data(cols, row):
     game_id = row['game_id']
     player_id = row['player_1']
     sub_player_id = row['player_2']
@@ -590,13 +590,13 @@ def get_substitution_data(row):
              sub_player_id,  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
-def get_timeout_data(row):
+def get_timeout_data(cols, row):
     game_id = row['game_id']
     play = row['plays']
     detail = re.search(r'(20 second|full|Official) timeout', play).group(1)
@@ -612,38 +612,38 @@ def get_timeout_data(row):
              detail.capitalize(),  # event_detail
              0  # possession
              ]
-    output = pd.DataFrame([array], columns=columns)
+    output = pd.DataFrame([array], columns=cols)
 
     log_performance()
     return output
 
 
 # iterate through plays to produce base event details
-def clean_plays(df):
-    output = pd.DataFrame(columns=columns)
+def clean_plays(cols, games_lineups, df):
+    output = pd.DataFrame(columns=cols)
     for i in range(len(df['plays'])):
         if 'Start of ' in df.loc[i, 'plays']:
-            output = output.append(get_period_start(df.loc[i]))
+            output = output.append(get_period_start(cols, df.loc[i]))
         elif 'End of ' in df.loc[i, 'plays']:
-            output = output.append(get_period_end(df.loc[i]))
+            output = output.append(get_period_end(cols, df.loc[i]))
         elif all(x in df.loc[i, 'plays'] for x in ['Jump ball', 'possession']):
-            output = output.append(get_jump_ball_data(df.loc[i]))
+            output = output.append(get_jump_ball_data(cols, games_lineups, df.loc[i]))
         elif any(x in df.loc[i, 'plays'] for x in [' makes ', ' misses ']):
-            output = output.append(get_shot_data(df.loc[i]))
+            output = output.append(get_shot_data(cols, df.loc[i]))
         elif ' rebound ' in df.loc[i, 'plays']:
-            output = output.append(get_rebound_data(df.loc[i], output.tail(1)))
+            output = output.append(get_rebound_data(cols, df.loc[i], output.tail(1)))
         elif 'Turnover ' in df.loc[i, 'plays']:
-            output = output.append(get_turnover_data(df.loc[i]))
+            output = output.append(get_turnover_data(cols, df.loc[i]))
             if 'steal by' in df.loc[i, 'plays']:
-                output = output.append(get_steal_data(df.loc[i]))
+                output = output.append(get_steal_data(cols, df.loc[i]))
         elif ' foul ' in df.loc[i, 'plays']:
-            output = output.append(get_foul_data(df.loc[i]))
+            output = output.append(get_foul_data(cols, df.loc[i]))
         elif 'Violation' in df.loc[i, 'plays']:
-            output = output.append(get_violation_data(df.loc[i]))
+            output = output.append(get_violation_data(cols, df.loc[i]))
         elif 'enters the game' in df.loc[i, 'plays']:
-            output = output.append(get_substitution_data(df.loc[i]))
+            output = output.append(get_substitution_data(cols, df.loc[i]))
         elif 'timeout' in df.loc[i, 'plays']:
-            output = output.append(get_timeout_data(df.loc[i]))
+            output = output.append(get_timeout_data(cols, df.loc[i]))
 
     log_performance()
     return output
@@ -676,15 +676,22 @@ def tidy_game_plays(df):
     return df
 
 
-def write_game_plays(series):
-    for i in range(len(series)):
+def write_game_plays(ns, queue):
+    game_ids = ns.game_ids
+    plays_raw = ns.plays_raw
+    games = ns.games
+    games_lineups = ns.games_lineups
+    columns = ns.columns
+    while not queue.empty():
         game_start = time.process_time()
 
+        iteration = queue.get()
+
         # grab raw plays data for the given game_id from plays_raw table
-        game_plays_raw = get_raw_plays(series[i])
+        game_plays_raw = get_raw_plays(plays_raw, games, game_ids[iteration])
 
         # base tidying up of events, details, period start and time
-        game_plays = clean_plays(game_plays_raw).reset_index(drop=True)
+        game_plays = clean_plays(columns, games_lineups, game_plays_raw).reset_index(drop=True)
 
         # fill down period from start of period row
         game_plays['period'] = game_plays.period.fillna(method='ffill')
@@ -699,12 +706,6 @@ def write_game_plays(series):
         game_plays['play_id'] = get_play_id(game_plays)
 
         cleaning_time = time.process_time() - game_start
-
-        # clear rows in DB where game plays already exist
-        try:
-            connection.execute(f'delete from nba.plays where play_id like "{series[i]}%"')
-        except ProgrammingError:
-            create_table_plays()
 
         # write to DB and CSV and get status
         status = write_data(df=game_plays,
@@ -721,12 +722,10 @@ def write_game_plays(series):
                      'Written in ' + "{:.2f}".format(writing_time) + ' seconds, '\
                      'Total ' + time_lapsed()
 
-        # currently >2 seconds per game -> ~1.3 for clean_plays and ~0.7 for get_on_court_player_ids
-
         # show progress of loop
-        progress(iteration=i,
-                 iterations=len(series),
-                 iteration_name=series[i],
+        progress(iteration=iteration,
+                 iterations=len(game_ids),
+                 iteration_name=game_ids[iteration],
                  lapsed=time_taken,
                  sql_status=status['sql'],
                  csv_status=status['csv'])
@@ -734,42 +733,79 @@ def write_game_plays(series):
         write_performance()
 
 
-if __name__ == '__main__':
-    # generate base columns
-    columns = ['play_id', 'game_id', 'period', 'time', 'score', 'team_id', 'player_id',
-               'event', 'event_value', 'event_detail', 'possession']
+def write_all_game_plays():
+    processes = []
+    for i in range(8):
+        proc = Process(target=write_game_plays, args=(name_space, q,))
+        proc.start()
+        processes.append(proc)
 
-    # initialise dataframe from scratch, or from DB
-    plays = initialise_df(table_name='plays',
-                          columns=columns,
-                          sql_engine=engine,
-                          meta=metadata)
+    for proc in processes:
+        proc.join()
+        proc.close()
 
-    # load raw plays data to clean
-    plays_raw = load_data(df='plays_raw',
-                          sql_engine=engine_raw,
-                          meta=metadata_raw)
 
-    # load games table to access game_ids
-    games = load_data(df='games',
-                      sql_engine=engine,
-                      meta=metadata)
-
-    # load lineups to assist with assigning players to teams
-    games_lineups = load_data(df='games_lineups',
-                              sql_engine=engine,
-                              meta=metadata)
-
+def get_game_ids():
     # set games to be cleaned
-    game_ids = games.game_id
+    output = name_space.plays_raw['game_id'].drop_duplicates().reset_index(drop=True)
 
     # if skipping already cleaned games, then check and exclude games already in plays table
-    if SKIP_SCRAPED_DAYS:
-        game_ids = games.game_id[~games.game_id.isin(plays.game_id)].reset_index(drop=True)
+    if SKIP_SCRAPED_GAMES:
+        output = output[~output.isin(name_space.plays['game_id'])].reset_index(drop=True)
+    else:
+        clear_game_ids = "|".join(output)
+        # clear rows in DB where game plays already exist
+        try:
+            connection.execute(f'delete from nba.plays where play_id regexp "{clear_game_ids}"')
+        except ProgrammingError:
+            pass
 
     log_performance()
+    return output
 
-    write_game_plays(game_ids)
+
+if __name__ == '__main__':
+    manager = Manager()
+    name_space = manager.Namespace()
+
+    # generate base columns
+    name_space.columns = ['play_id', 'game_id', 'period', 'time', 'score', 'team_id', 'player_id',
+                          'event', 'event_value', 'event_detail', 'possession']
+
+    # load games table to access game_ids
+    name_space.games = load_data(df='games',
+                                 sql_engine=engine,
+                                 meta=metadata)
+
+    # load lineups to assist with assigning players to teams
+    name_space.games_lineups = load_data(df='games_lineups',
+                                         sql_engine=engine,
+                                         meta=metadata)
+
+    # initialise dataframe from scratch, or from DB
+    name_space.plays = initialise_df(table_name='plays',
+                                     columns=name_space.columns,
+                                     sql_engine=engine,
+                                     meta=metadata)
+
+    # load raw plays data to clean
+    name_space.plays_raw = load_data(df='plays_raw',
+                                     sql_engine=engine_raw,
+                                     meta=metadata_raw)
+
+    name_space.game_ids = get_game_ids()
+
+    # name_space.batch_plays = pd.DataFrame(columns=name_space.columns)
+
+    q = manager.Queue()
+    [q.put(i) for i in name_space.game_ids.index]
+
+    create_table_plays()
+
+    write_all_game_plays()
+
+    # return to regular output writing
+    sys.stdout.write('\n')
 
     print(Colour.green + 'Plays Data Cleaned' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
