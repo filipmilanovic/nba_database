@@ -2,7 +2,6 @@
 from modelling.projects.nba.utils.colours import *
 from modelling.projects.nba.utils.environment import *
 import sqlalchemy as sql
-from sqlalchemy import Table, Column, VARCHAR, DATE, TIME, SMALLINT, DECIMAL
 from sqlalchemy.exc import ProgrammingError, OperationalError, NoSuchTableError
 from sqlalchemy.sql.expression import func
 

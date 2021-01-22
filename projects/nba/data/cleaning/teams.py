@@ -10,7 +10,6 @@ if __name__ == '__main__':
     # write to SQL and CSV
     write_data(df=teams,
                name='teams',
-               to_csv=True,
                sql_engine=engine,
                db_schema='nba',
                if_exists='append',

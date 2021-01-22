@@ -19,7 +19,7 @@ def get_player_dob(html):
 
 def get_player_height(html):
     height = html.find('span', {'itemprop': 'height'}).text
-    inches = int(left(height, 1))*12 + int(re.search('-(\d+)', height).group(1))
+    inches = int(left(height, 1))*12 + int(re.search(r'-(\d+)', height).group(1))
     output = int(inches*2.54)
 
     log_performance()
@@ -28,7 +28,7 @@ def get_player_height(html):
 
 def get_player_weight(html):
     weight = html.find('span', {'itemprop': 'weight'}).text
-    pounds = int(re.search('(\d+)lb', weight).group(1))
+    pounds = int(re.search(r'(\d+)lb', weight).group(1))
     output = int(pounds/2.205)
 
     log_performance()
@@ -88,15 +88,6 @@ def get_rookie_year(html):
             output = debut.year
     except AttributeError:
         output = None
-
-    log_performance()
-    return output
-
-
-def get_player_list(df):
-    output = list(set(df['player_id']))
-
-    print(Colour.green + 'Generated list of players' + Colour.end)
 
     log_performance()
     return output
@@ -173,7 +164,6 @@ def write_player_data(iteration):
 
     status = write_data(df=df,
                         name='players',
-                        to_csv=False,
                         sql_engine=engine,
                         db_schema='nba',
                         if_exists='append',
@@ -183,24 +173,21 @@ def write_player_data(iteration):
              iterations=len(url_list),
              iteration_name=player_name,
              lapsed=time_lapsed(),
-             sql_status=status['sql'],
-             csv_status=status['csv'])
+             sql_status=status['sql'])
 
 
 def write_all_players():
     iterations = range(len(url_list))
     with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
         executor.map(write_player_data, iterations)
+        executor.shutdown()
 
 
 if __name__ == '__main__':
+    create_table_players()
+
     columns = ['player_id', 'player_name', 'dob', 'height', 'weight', 'hand', 'position',
                'draft_year', 'draft_pick', 'rookie_year']
-
-    players = initialise_df(table_name='players',
-                            columns=columns,
-                            sql_engine=engine,
-                            meta=metadata)
 
     games = load_data(df='games',
                       sql_engine=engine,
@@ -210,20 +197,18 @@ if __name__ == '__main__':
                               sql_engine=engine,
                               meta=metadata)
 
-    # create table in DB if not exists
-    create_table_players()
-
     # get list of players
-    player_list = get_player_list(games_lineups)
+    selectable = get_existing_query(metadata, engine, 'games_lineups', 'player_id')
+    player_list = pd.read_sql(sql=selectable, con=connection)['player_id']
 
     if SKIP_SCRAPED_PLAYERS:
-        player_list = pd.Series(player_list)[~pd.Series(player_list).isin(players['player_id'])].reset_index(drop=True)
+        selectable = get_existing_query(metadata, engine, 'players', 'player_id')
+        skip_players = pd.read_sql(sql=selectable, con=connection)['player_id']
+
+        player_list = pd.Series(player_list)[~pd.Series(player_list).isin(skip_players)].reset_index(drop=True)
     else:  # clear rows where play data already exists
-        clear_player_ids = "', '".join(player_list)
-        try:
-            connection_raw.execute(f"delete from nba.players where player_id in ('{clear_player_ids}')")
-        except ProgrammingError:
-            pass
+        selectable = get_delete_query(metadata, engine, 'players', 'player_id', player_list)
+        connection.execute(selectable)
 
     # get list of urls
     url_list = get_player_url_list(player_list)
