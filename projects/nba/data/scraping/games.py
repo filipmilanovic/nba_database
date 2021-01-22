@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     if SKIP_SCRAPED_GAMES:
         # return seasons of existing games
-        selectable = get_existing_query(metadata, engine, 'games', 'season')
+        selectable = get_column_query(metadata, engine, 'games', 'season')
         skip_seasons = pd.read_sql(sql=selectable, con=connection)['season']
 
         # remove seasons from iterations where already exists

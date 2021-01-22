@@ -709,10 +709,9 @@ def write_game_plays(ns, queue):
 
         cleaning_time = time.process_time() - game_start
 
-        # write to DB and CSV and get status
+        # write to DB and get status
         status = write_data(df=game_plays,
                             name='plays',
-                            to_csv=False,
                             sql_engine=engine,
                             db_schema='nba',
                             if_exists='append',
@@ -726,8 +725,7 @@ def write_game_plays(ns, queue):
                  iterations=len(game_ids),
                  iteration_name=game_ids[iteration],
                  lapsed=time_taken,
-                 sql_status=status['sql'],
-                 csv_status=status['csv'])
+                 sql_status=status['sql'])
 
         write_performance()
 
@@ -814,6 +812,8 @@ def write_all_plays(series):
 
 
 if __name__ == '__main__':
+    create_table_plays()
+
     manager = Manager()
     name_space = manager.Namespace()
 
@@ -830,8 +830,6 @@ if __name__ == '__main__':
     name_space.games_lineups = load_data(df='games_lineups',
                                          sql_engine=engine,
                                          meta=metadata)
-
-    create_table_plays()
 
     # get seasons from games table to iterate
     seasons = list(set(name_space.games['season']))

@@ -198,11 +198,11 @@ if __name__ == '__main__':
                               meta=metadata)
 
     # get list of players
-    selectable = get_existing_query(metadata, engine, 'games_lineups', 'player_id')
+    selectable = get_column_query(metadata, engine, 'games_lineups', 'player_id')
     player_list = pd.read_sql(sql=selectable, con=connection)['player_id']
 
     if SKIP_SCRAPED_PLAYERS:
-        selectable = get_existing_query(metadata, engine, 'players', 'player_id')
+        selectable = get_column_query(metadata, engine, 'players', 'player_id')
         skip_players = pd.read_sql(sql=selectable, con=connection)['player_id']
 
         player_list = pd.Series(player_list)[~pd.Series(player_list).isin(skip_players)].reset_index(drop=True)

@@ -231,7 +231,7 @@ if __name__ == '__main__':
 
     if SKIP_SCRAPED_GAMES:
         # return game_ids of already scraped odds
-        selectable = get_existing_query(metadata, engine, 'odds', 'game_id')
+        selectable = get_column_query(metadata, engine, 'odds', 'game_id')
         skip_game_ids = pd.read_sql(sql=selectable, con=connection)['game_id']
 
         # find seasons of existing game_ids and remove from iterations

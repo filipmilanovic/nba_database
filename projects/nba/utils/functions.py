@@ -72,7 +72,14 @@ def initialise_df(table_name, columns, sql_engine, meta):
     return df
 
 
-def get_existing_query(meta, eng, name, column):
+def get_table_query(meta, eng, name):
+    meta.reflect(bind=eng)
+    table = meta.tables[name]
+    output = sql.sql.select([table])
+    return output
+
+
+def get_column_query(meta, eng, name, column):
     meta.reflect(bind=eng)
     table = meta.tables[name]
     output = sql.sql.select([table.c[column]]).distinct()

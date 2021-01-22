@@ -152,7 +152,7 @@ if __name__ == '__main__':
 
     # skip games that have already been scraped
     if SKIP_SCRAPED_GAMES:
-        selectable = get_existing_query(metadata, engine, 'games_lineups', 'game_id')
+        selectable = get_column_query(metadata, engine, 'games_lineups', 'game_id')
         skip_game_ids = pd.read_sql(sql=selectable, con=connection)['game_id']
 
         game_ids = game_ids[~game_ids.isin(skip_game_ids)].reset_index(drop=True)

@@ -116,12 +116,12 @@ if __name__ == '__main__':
     columns = ['plays', 'player_1', 'player_2', 'player_3', 'game_id']
 
     # create game index for accessing website
-    selectable = get_existing_query(metadata, engine, 'games', 'game_id')
+    selectable = get_column_query(metadata, engine, 'games', 'game_id')
     game_ids = pd.read_sql(sql=selectable, con=connection)['game_id']
 
     # skip games that have already been scraped
     if SKIP_SCRAPED_GAMES:
-        selectable = get_existing_query(metadata_raw, engine_raw, 'plays_raw', 'game_id')
+        selectable = get_column_query(metadata_raw, engine_raw, 'plays_raw', 'game_id')
         skip_games = pd.read_sql(sql=selectable, con=connection_raw)['game_id']
 
         game_ids = game_ids[~game_ids.isin(skip_games)].reset_index(drop=True)
