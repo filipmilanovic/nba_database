@@ -599,7 +599,7 @@ def get_substitution_data(cols, row):
 def get_timeout_data(cols, row):
     game_id = row['game_id']
     play = row['plays']
-    detail = re.search(r'(20 second|full|Official) timeout', play).group(1)
+    detail = re.search(r'(20 second|full|Official|no) timeout', play).group(1)
     array = [None,  # play_id
              game_id,  # game_id,
              None,  # period
@@ -621,29 +621,31 @@ def get_timeout_data(cols, row):
 # iterate through plays to produce base event details
 def clean_plays(cols, games_lineups, df):
     output = pd.DataFrame(columns=cols)
-    for i in range(len(df['plays'])):
-        if 'Start of ' in df.loc[i, 'plays']:
-            output = output.append(get_period_start(cols, df.loc[i]))
-        elif 'End of ' in df.loc[i, 'plays']:
-            output = output.append(get_period_end(cols, df.loc[i]))
-        elif all(x in df.loc[i, 'plays'] for x in ['Jump ball', 'possession']):
-            output = output.append(get_jump_ball_data(cols, games_lineups, df.loc[i]))
-        elif any(x in df.loc[i, 'plays'] for x in [' makes ', ' misses ']):
-            output = output.append(get_shot_data(cols, df.loc[i]))
-        elif ' rebound ' in df.loc[i, 'plays']:
-            output = output.append(get_rebound_data(cols, df.loc[i], output.tail(1)))
-        elif 'Turnover ' in df.loc[i, 'plays']:
-            output = output.append(get_turnover_data(cols, df.loc[i]))
-            if 'steal by' in df.loc[i, 'plays']:
-                output = output.append(get_steal_data(cols, df.loc[i]))
-        elif ' foul ' in df.loc[i, 'plays']:
-            output = output.append(get_foul_data(cols, df.loc[i]))
-        elif 'Violation' in df.loc[i, 'plays']:
-            output = output.append(get_violation_data(cols, df.loc[i]))
-        elif 'enters the game' in df.loc[i, 'plays']:
-            output = output.append(get_substitution_data(cols, df.loc[i]))
-        elif 'timeout' in df.loc[i, 'plays']:
-            output = output.append(get_timeout_data(cols, df.loc[i]))
+    for i in range(len(df)):
+        play = df.loc[i, 'plays']
+        row = df.loc[i]
+        if 'Start of ' in play:
+            output = output.append(get_period_start(cols, row))
+        elif 'End of ' in play:
+            output = output.append(get_period_end(cols, row))
+        elif all(x in play for x in ['Jump ball', 'possession']):
+            output = output.append(get_jump_ball_data(cols, games_lineups, row))
+        elif any(x in play for x in [' makes ', ' misses ']):
+            output = output.append(get_shot_data(cols, row))
+        elif ' rebound ' in play:
+            output = output.append(get_rebound_data(cols, row, output.tail(1)))
+        elif 'Turnover ' in play:
+            output = output.append(get_turnover_data(cols, row))
+            if 'steal by' in play:
+                output = output.append(get_steal_data(cols, row))
+        elif ' foul ' in play:
+            output = output.append(get_foul_data(cols, row))
+        elif 'Violation' in play:
+            output = output.append(get_violation_data(cols, row))
+        elif 'enters the game' in play:
+            output = output.append(get_substitution_data(cols, row))
+        elif 'timeout' in play:
+            output = output.append(get_timeout_data(cols, row))
 
     log_performance()
     return output
@@ -716,10 +718,7 @@ def write_game_plays(ns, queue):
                             if_exists='append',
                             index=False)
 
-        writing_time = time.process_time() - game_start - cleaning_time
-
         time_taken = 'Cleaned in ' + "{:.2f}".format(cleaning_time) + ' seconds, '\
-                     'Written in ' + "{:.2f}".format(writing_time) + ' seconds, '\
                      'Total ' + time_lapsed()
 
         # show progress of loop
@@ -733,25 +732,44 @@ def write_game_plays(ns, queue):
         write_performance()
 
 
-def write_all_game_plays():
-    processes = []
-    for i in range(8):
-        proc = Process(target=write_game_plays, args=(name_space, q,))
-        proc.start()
-        processes.append(proc)
+def write_season_plays(queue):
+    # set up processes
+    processes = [Process(target=write_game_plays, name=f'Process-{i}', args=(name_space, queue,)) for i in range(8)]
+    [proc.start() for proc in processes]
+    [proc.join() for proc in processes]
 
-    for proc in processes:
-        proc.join()
-        proc.close()
+    sys.stdout.write('\n')
 
 
-def get_game_ids():
+def get_plays_query(series):
+    ordered = series.sort_values().reset_index(drop=True)
+    first_date = int(left(ordered[0], 8))
+    last_date = int(left(ordered.values[-1], 8)) + 1
+
+    metadata.reflect(bind=engine)
+    table = metadata.tables['plays']
+
+    output = table.select().where((func.left(table.c.play_id, 8) >= first_date)
+                                  & (func.left(table.c.play_id, 8) <= last_date))
+
+    log_performance()
+    return output
+
+
+def get_season_game_ids(season):
+    games = name_space.games
+
     # set games to be cleaned
-    output = name_space.plays_raw['game_id'].drop_duplicates().reset_index(drop=True)
+    output = games.loc[games['season'] == season, 'game_id'].reset_index(drop=True)
 
     # if skipping already cleaned games, then check and exclude games already in plays table
     if SKIP_SCRAPED_GAMES:
-        output = output[~output.isin(name_space.plays['game_id'])].reset_index(drop=True)
+        # get selectable object sql query to get already scraped plays
+        selectable = get_plays_query(output)
+
+        # share seasons raw plays across processes
+        plays = pd.read_sql(sql=selectable, con=engine)
+        output = output[~output.isin(plays['game_id'])].reset_index(drop=True)
     else:
         clear_game_ids = "|".join(output)
         # clear rows in DB where game plays already exist
@@ -762,6 +780,37 @@ def get_game_ids():
 
     log_performance()
     return output
+
+
+def get_plays_raw_query(series):
+    metadata_raw.reflect(bind=engine_raw)
+    table = metadata_raw.tables['plays_raw']
+
+    output = table.select().where(table.c.game_id.in_(series))
+
+    log_performance()
+    return output
+
+
+def write_all_plays(series):
+    # iterate through seasons
+    for season in series:
+        # share game_ids for the season across processes
+        name_space.game_ids = get_season_game_ids(season)
+
+        # get selectable object sql query to get raw plays for the season
+        selectable = get_plays_raw_query(name_space.game_ids)
+
+        # share seasons raw plays across processes
+        name_space.plays_raw = pd.read_sql(sql=selectable, con=engine_raw)
+
+        # create game_id queue
+        q = manager.Queue()
+        [q.put(i) for i in name_space.game_ids.index]
+
+        write_season_plays(q)
+
+        print(f'Completed season {season}')
 
 
 if __name__ == '__main__':
@@ -782,30 +831,12 @@ if __name__ == '__main__':
                                          sql_engine=engine,
                                          meta=metadata)
 
-    # initialise dataframe from scratch, or from DB
-    name_space.plays = initialise_df(table_name='plays',
-                                     columns=name_space.columns,
-                                     sql_engine=engine,
-                                     meta=metadata)
-
-    # load raw plays data to clean
-    name_space.plays_raw = load_data(df='plays_raw',
-                                     sql_engine=engine_raw,
-                                     meta=metadata_raw)
-
-    name_space.game_ids = get_game_ids()
-
-    # name_space.batch_plays = pd.DataFrame(columns=name_space.columns)
-
-    q = manager.Queue()
-    [q.put(i) for i in name_space.game_ids.index]
-
     create_table_plays()
 
-    write_all_game_plays()
+    # get seasons from games table to iterate
+    seasons = list(set(name_space.games['season']))
 
-    # return to regular output writing
-    sys.stdout.write('\n')
+    write_all_plays(seasons)
 
     print(Colour.green + 'Plays Data Cleaned' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)

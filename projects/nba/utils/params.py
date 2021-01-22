@@ -16,10 +16,3 @@ SKIP_SCRAPED_PLAYERS = True
 # Dates for table odds
 start_season_odds = 2009  # odds only from 2008/2009
 end_season_odds = 2020
-
-# Loading method (csv or sql)
-LOAD_METHOD = 'sql'
-
-
-# For cleaning game data future games
-unplayed_date = date(2019, 6, 30)
