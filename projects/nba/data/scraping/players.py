@@ -1,5 +1,6 @@
 # SCRAPING PLAYER DATA
 from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.utils import *
 from modelling.projects.nba.data.scraping import *
 
 

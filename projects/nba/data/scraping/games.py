@@ -1,5 +1,6 @@
 # SCRAPING GAME DATA
-from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba import re, threading, concurrent
+from modelling.projects.nba.utils import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
 

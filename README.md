@@ -57,7 +57,7 @@ Basketball Reference for all games that appear within both the nba.games table, 
 [cleaning.plays.py](projects/nba/data/cleaning/plays.py) - this applies logic to all raw play by play rows in
 `nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
 becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes the data to `nba.plays` in the DB.
-(~3 hours)
+(~1.5 hours)
 
 [cleaning.plays_players.py](projects/nba/data/cleaning/plays_players.py) - this figures out which players were on the
 court at any point in time.  Basketball Reference doesn't show substitutions at quarter/half breaks, so this looks

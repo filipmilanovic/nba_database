@@ -1,5 +1,6 @@
 # CLEAN RAW PLAYS DATA
-from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba import re, np, Process, Manager
+from modelling.projects.nba.utils import *
 
 
 # LOADING AND TIDYING OF RAW PLAYS TEXT
@@ -179,50 +180,48 @@ def get_shot_detail(play):
 
 # PRODUCE ROWS FOR EACH DIFFERENT TYPE OF EVENT
 # Produce the 'Period Start' line in order to get the correct period
-def get_period_start(cols, row):
+def get_period_start(row):
     play = row['plays']
     game_id = row['game_id']
-    array = [None,  # play_id
-             game_id,  # game_id,
-             get_quarter(play),  # period
-             row['time'],  # time
-             None,  # score
-             None,  # team_id
-             None,  # player_id
-             'Period Start',  # event
-             None,  # event_value
-             None,  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              get_quarter(play),  # period
+              row['time'],  # time
+              None,  # score
+              None,  # team_id
+              None,  # player_id
+              'Period Start',  # event
+              None,  # event_value
+              None,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
 
 
 # Produce the 'Period End' line in order to get the correct period end
-def get_period_end(cols, row):
+def get_period_end(row):
     game_id = row['game_id']
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             '0:00',  # time
-             None,  # score
-             None,  # team_id
-             None,  # player_id
-             'Period End',  # event
-             None,  # event_value
-             None,  # event_detail
-             1  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              '0:00',  # time
+              None,  # score
+              None,  # team_id
+              None,  # player_id
+              'Period End',  # event
+              None,  # event_value
+              None,  # event_detail
+              1  # possession
+              ]
 
     log_performance()
     return output
 
 
 # get data for a jump ball
-def get_jump_ball_data(cols, games_lineups, row):
+def get_jump_ball_data(games_lineups, row):
     game_id = row['game_id']
     player_1 = row['player_1']
     player_2 = row['player_2']
@@ -245,19 +244,18 @@ def get_jump_ball_data(cols, games_lineups, row):
     else:
         winning_player_id = player_2
         losing_player_id = player_1
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             winning_team_id,  # team_id
-             winning_player_id,  # player_id
-             'Jump Ball',  # event
-             1,  # event_value
-             losing_player_id,  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              winning_team_id,  # team_id
+              winning_player_id,  # player_id
+              'Jump Ball',  # event
+              1,  # event_value
+              losing_player_id,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
@@ -269,19 +267,18 @@ def get_shot_attempt_data(row, shot_type):
     play = row['plays']
     player_id = row['player_1']
 
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             str(shot_type) + ' Shot',  # event
-             get_shot_value(play),  # event_value
-             get_shot_detail(play),  # event_detail
-             0  # possession
-             ]
-    output = array
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              str(shot_type) + ' Shot',  # event
+              get_shot_value(play),  # event_value
+              get_shot_detail(play),  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
@@ -301,19 +298,18 @@ def get_shot_make_data(row, shot_type):
         ft_number = re.search(r'\d of (\d)', play).group(1)
         possession = possession * (sequence == ft_number)
 
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             str(shot_type) + ' Make',  # event
-             get_shot_value(play),  # event_value
-             get_shot_detail(play),  # event_detail
-             possession  # possession
-             ]
-    output = array
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              str(shot_type) + ' Make',  # event
+              get_shot_value(play),  # event_value
+              get_shot_detail(play),  # event_detail
+              possession  # possession
+              ]
 
     log_performance()
     return output
@@ -333,19 +329,18 @@ def get_shot_miss_data(row, shot_type):
         ft_number = re.search(r'\d of (\d)', play).group(1)
         possession = possession * (sequence == ft_number)
 
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             str(shot_type) + ' Miss',  # event
-             get_shot_value(play),  # event_value
-             get_shot_detail(play),  # event_detail
-             possession  # possession
-             ]
-    output = array
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              str(shot_type) + ' Miss',  # event
+              get_shot_value(play),  # event_value
+              get_shot_detail(play),  # event_detail
+              possession  # possession
+              ]
 
     log_performance()
     return output
@@ -356,19 +351,18 @@ def get_assist_data(row):
     game_id = row['game_id']
     shooter_id = row['player_1']
     player_id = row['player_2']
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             'Assist',  # event
-             1,  # event_value
-             shooter_id,  # event_detail
-             0  # possession
-             ]
-    output = array
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              'Assist',  # event
+              1,  # event_value
+              shooter_id,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
@@ -379,28 +373,27 @@ def get_block_data(row):
     game_id = row['game_id']
     shooter_id = row['player_1']
     player_id = row['player_2']
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row, True),  # team_id
-             player_id,  # player_id
-             'Block',  # event
-             1,  # event_value
-             shooter_id,  # event_detail
-             0  # possession
-             ]
-    output = array
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row, True),  # team_id
+              player_id,  # player_id
+              'Block',  # event
+              1,  # event_value
+              shooter_id,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
 
 
 # combine all shot related information to produce detailed rows of data
-def get_shot_data(cols, row):
+def get_shot_data(row):
     play = row['plays']
-    arrays = []
+    output = []
     # label FT or FG
     if 'free throw' in play:
         shot_type = 'FT'
@@ -413,107 +406,103 @@ def get_shot_data(cols, row):
     # get row for shot miss
     if ' misses' in play:
         miss = get_shot_miss_data(row, shot_type)
-        arrays = [shot, miss]
+        output = [shot] + [miss]
 
         # get row for block if shot blocked
         if 'block by' in play:
             block = get_block_data(row)
-            arrays = [shot, miss, block]
+            output = [shot] + [miss] + [block]
 
     # get row for shot make
     elif ' makes' in play:
         make = get_shot_make_data(row, shot_type)
-        arrays = [shot, make]
+        output = [shot] + [make]
 
         # get row for assist if applicable
         if 'assist by' in play:
             assist = get_assist_data(row)
-            arrays = [shot, make, assist]
-
-    # create dataframe of given rows
-    output = pd.DataFrame(arrays, columns=cols)
+            output = [shot] + [make] + [assist]
 
     log_performance()
     return output
 
 
 # get who rebounded the ball, with whose shot they rebounded
-def get_rebound_data(cols, row, y):
+def get_rebound_data(row, last_row, second_last_row):
     game_id = row['game_id']
-    shooter = None
     play = row['plays']
+    last_play = last_row['plays']
     player_id = row['player_1']
+
     # there is a bug with rare missing shot info, or sub occurs after FT miss so the shooter isn't picked up
-    if y.event.item() is None:
+    if any(x in last_play for x in [' misses', 'block by']):
+        shooter = last_row['player_1']
+    elif any(x in second_last_row['plays'] for x in [' misses', 'block by']):
+        shooter = second_last_row['player_1']
+    else:
         shooter = None
-    elif 'Miss' in y.event.item():
-        shooter = y.player_id.item()
-    elif 'Block' in y.event.item():
-        shooter = y.event_detail.item()
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             re.search(r'(.*) rebound', play).group(0),  # event
-             1,  # event_value
-             shooter,  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              re.search(r'(.*) rebound', play).group(0),  # event
+              1,  # event_value
+              shooter,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
 
 
-def get_turnover_data(cols, row):
+def get_turnover_data(row):
     game_id = row['game_id']
     play = row['plays']
     player_id = row['player_1']
     detail = if_none(re.search(r'\((.*);', play), re.search(r'\((.*)\)', play))
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             'Turnover',  # event
-             1,  # event_value
-             detail.group(1),  # event_detail
-             1  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              'Turnover',  # event
+              1,  # event_value
+              detail.group(1),  # event_detail
+              1  # possession
+              ]
 
     log_performance()
     return output
 
 
-def get_steal_data(cols, row):
+def get_steal_data(row):
     game_id = row['game_id']
     turnover_player_id = row['player_1']
     player_id = row['player_2']
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row, True),  # team_id
-             player_id,  # player_id
-             'Steal',  # event
-             1,  # event_value
-             turnover_player_id,  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row, True),  # team_id
+              player_id,  # player_id
+              'Steal',  # event
+              1,  # event_value
+              turnover_player_id,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
 
 
-def get_foul_data(cols, row):
+def get_foul_data(row):
     game_id = row['game_id']
     play = row['plays']
     player_id = row['player_1']
@@ -534,85 +523,81 @@ def get_foul_data(cols, row):
     event = re.search(r'(.*) foul', play).group(0)
     reverse = any(x in event for x in reversed_fouls)
 
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row, reverse),  # team_id
-             player_id,  # player_id
-             event,  # event
-             1,  # event_value
-             fouled_player_id,  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row, reverse),  # team_id
+              player_id,  # player_id
+              event,  # event
+              1,  # event_value
+              fouled_player_id,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
 
 
-def get_violation_data(cols, row):
+def get_violation_data(row):
     game_id = row['game_id']
     play = row['plays']
     player_id = row['player_1']
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             'Violation',  # event
-             1,  # event_value
-             re.search(r'\((.*)\)', play).group(1),  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              'Violation',  # event
+              1,  # event_value
+              re.search(r'\((.*)\)', play).group(1),  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
 
 
-def get_substitution_data(cols, row):
+def get_substitution_data(row):
     game_id = row['game_id']
     player_id = row['player_1']
     sub_player_id = row['player_2']
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             player_id,  # player_id
-             'Substitution',  # event
-             1,  # event_value
-             sub_player_id,  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              player_id,  # player_id
+              'Substitution',  # event
+              1,  # event_value
+              sub_player_id,  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
 
 
-def get_timeout_data(cols, row):
+def get_timeout_data(row):
     game_id = row['game_id']
     play = row['plays']
     detail = re.search(r'(20 second|full|Official|no) timeout', play).group(1)
-    array = [None,  # play_id
-             game_id,  # game_id,
-             None,  # period
-             row['time'],  # time
-             None,  # score
-             get_team_id(row),  # team_id
-             None,  # player_id
-             'Timeout',  # event
-             1,  # event_value
-             detail.capitalize(),  # event_detail
-             0  # possession
-             ]
-    output = pd.DataFrame([array], columns=cols)
+    output = [None,  # play_id
+              game_id,  # game_id,
+              None,  # period
+              row['time'],  # time
+              None,  # score
+              get_team_id(row),  # team_id
+              None,  # player_id
+              'Timeout',  # event
+              1,  # event_value
+              detail.capitalize(),  # event_detail
+              0  # possession
+              ]
 
     log_performance()
     return output
@@ -620,32 +605,34 @@ def get_timeout_data(cols, row):
 
 # iterate through plays to produce base event details
 def clean_plays(cols, games_lineups, df):
-    output = pd.DataFrame(columns=cols)
+    output = []
     for i in range(len(df)):
         play = df.loc[i, 'plays']
         row = df.loc[i]
         if 'Start of ' in play:
-            output = output.append(get_period_start(cols, row))
+            output = output + [get_period_start(row)]
         elif 'End of ' in play:
-            output = output.append(get_period_end(cols, row))
+            output = output + [get_period_end(row)]
         elif all(x in play for x in ['Jump ball', 'possession']):
-            output = output.append(get_jump_ball_data(cols, games_lineups, row))
+            output = output + [get_jump_ball_data(games_lineups, row)]
         elif any(x in play for x in [' makes ', ' misses ']):
-            output = output.append(get_shot_data(cols, row))
+            output = output + get_shot_data(row)
         elif ' rebound ' in play:
-            output = output.append(get_rebound_data(cols, row, output.tail(1)))
+            output = output + [get_rebound_data(row, df.loc[i-1], df.loc[i-2])]
         elif 'Turnover ' in play:
-            output = output.append(get_turnover_data(cols, row))
+            output = output + [get_turnover_data(row)]
             if 'steal by' in play:
-                output = output.append(get_steal_data(cols, row))
+                output = output + [get_steal_data(row)]
         elif ' foul ' in play:
-            output = output.append(get_foul_data(cols, row))
+            output = output + [get_foul_data(row)]
         elif 'Violation' in play:
-            output = output.append(get_violation_data(cols, row))
+            output = output + [get_violation_data(row)]
         elif 'enters the game' in play:
-            output = output.append(get_substitution_data(cols, row))
+            output = output + [get_substitution_data(row)]
         elif 'timeout' in play:
-            output = output.append(get_timeout_data(cols, row))
+            output = output + [get_timeout_data(row)]
+
+    output = pd.DataFrame(output, columns=cols)
 
     log_performance()
     return output
@@ -739,45 +726,27 @@ def write_season_plays(queue):
     sys.stdout.write('\n')
 
 
-def get_plays_query(series):
-    ordered = series.sort_values().reset_index(drop=True)
-    first_date = int(left(ordered[0], 8))
-    last_date = int(left(ordered.values[-1], 8)) + 1
-
-    metadata.reflect(bind=engine)
-    table = metadata.tables['plays']
-
-    output = table.select().where((func.left(table.c.play_id, 8) >= first_date)
-                                  & (func.left(table.c.play_id, 8) <= last_date))
-
-    log_performance()
-    return output
-
-
 def get_season_game_ids(season):
     games = name_space.games
 
     # set games to be cleaned
-    output = games.loc[games['season'] == season, 'game_id'].reset_index(drop=True)
+    game_ids = games.loc[games['season'] == season, 'game_id'].reset_index(drop=True)
 
     # if skipping already cleaned games, then check and exclude games already in plays table
     if SKIP_SCRAPED_GAMES:
         # get selectable object sql query to get already scraped plays
-        selectable = get_plays_query(output)
+        selectable = get_column_query(metadata, engine, 'plays', 'game_id')
+        skip_games = pd.read_sql(sql=selectable, con=connection)['game_id']
 
-        # share seasons raw plays across processes
-        plays = pd.read_sql(sql=selectable, con=engine)
-        output = output[~output.isin(plays['game_id'])].reset_index(drop=True)
+        # skip already scraped game_ids
+        game_ids = game_ids[~game_ids.isin(skip_games)].reset_index(drop=True)
     else:
-        clear_game_ids = "|".join(output)
-        # clear rows in DB where game plays already exist
-        try:
-            connection.execute(f'delete from nba.plays where play_id regexp "{clear_game_ids}"')
-        except ProgrammingError:
-            pass
+        # clear rows where play data already exists
+        selectable = get_delete_query(metadata, engine, 'plays', 'game_id', game_ids)
+        connection.execute(selectable)
 
     log_performance()
-    return output
+    return game_ids
 
 
 def get_plays_raw_query(series):
@@ -806,7 +775,8 @@ def write_all_plays(series):
         q = manager.Queue()
         [q.put(i) for i in name_space.game_ids.index]
 
-        write_season_plays(q)
+        if not q.empty():
+            write_season_plays(q)
 
         print(f'Completed season {season}')
 

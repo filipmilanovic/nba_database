@@ -1,5 +1,6 @@
 # GET PLAYER_IDS ON THE COURT FOR EACH PLAY
 from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.utils import *
 from modelling.projects.nba.data.scraping import *  # importing scraping for certain exceptions
 
 # GENERATING LIST OF ON-COURT PLAYERS

@@ -1,9 +1,8 @@
 # DEFINING FUNCTIONS FOR USE IN PROJECT
-from modelling.projects.nba.utils.connections import *
-from modelling.projects.nba.utils.path import *
-import pandas as pd
-import sqlalchemy as sql
-import sys
+from modelling.projects import pd, sys, time, start_time
+from modelling.projects.nba.utils.connections import sql
+from modelling.projects.nba.utils.colours import *
+from sqlalchemy.exc import OperationalError, NoSuchTableError
 
 
 # Useful functions
@@ -56,42 +55,6 @@ def write_data(df,
     status = {"sql": status_sql}
 
     return status
-
-
-# Set up dataframe
-def initialise_df(table_name, columns, sql_engine, meta):
-    # set up basic dataframe by loading from SQL or CSV if exists, or generating empty one
-    try:
-        df = load_data(df=table_name,
-                       sql_engine=sql_engine,
-                       meta=meta)
-    except (NoSuchTableError, OperationalError, NameError):
-        print(Colour.green + f'Building table {table_name} from scratch' + Colour.end)
-        df = pd.DataFrame(columns=columns)
-
-    return df
-
-
-def get_table_query(meta, eng, name):
-    meta.reflect(bind=eng)
-    table = meta.tables[name]
-    output = sql.sql.select([table])
-    return output
-
-
-def get_column_query(meta, eng, name, column):
-    meta.reflect(bind=eng)
-    table = meta.tables[name]
-    output = sql.sql.select([table.c[column]]).distinct()
-    return output
-
-
-def get_delete_query(meta, eng, name, column, series):
-    meta.reflect(bind=eng)
-    table = meta.tables[name]
-
-    output = table.delete().where(table.c[column].in_(series))
-    return output
 
 
 #  Data cleaning functions

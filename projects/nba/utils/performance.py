@@ -1,5 +1,8 @@
 from modelling.projects import *  # high level packages
-from modelling.projects.nba.utils.connections import *
+from modelling.projects.nba.utils.connections import sql
+from modelling.projects.nba.utils.environment import *
+from modelling.projects.nba.utils.colours import *
+from sqlalchemy.exc import OperationalError
 import inspect
 
 # write performance of functions to DB

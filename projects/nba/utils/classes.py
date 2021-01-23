@@ -1,6 +1,4 @@
 # DEFINE KEY CLASSES
-
-
 # Define base Team class
 class Team:
     instances = []
