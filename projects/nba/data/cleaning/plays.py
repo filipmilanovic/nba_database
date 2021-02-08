@@ -13,7 +13,7 @@ def get_raw_plays(plays_raw, games, game_id):
     global team_names
     team_names = {'home_team': home_team, 'away_team': away_team}
 
-    output = plays_raw.loc[plays_raw.game_id == game_id]
+    output = plays_raw.loc[plays_raw['game_id'] == game_id]
 
     # remove line breaks from strings
     output['plays'] = play_remove_line_break(output['plays'])
@@ -644,7 +644,7 @@ def tidy_game_plays(df):
     teams = [i for i in set(df.team_id) if i is not None]
 
     # get index of period start rows
-    period_start = df.index[df.event == 'Period Start']
+    period_start = df.index[df['event'] == 'Period Start']
 
     # get data from next row
     for i in period_start:
@@ -683,7 +683,7 @@ def write_game_plays(ns, queue):
         game_plays = clean_plays(columns, games_lineups, game_plays_raw).reset_index(drop=True)
 
         # fill down period from start of period row
-        game_plays['period'] = game_plays.period.fillna(method='ffill')
+        game_plays['period'] = game_plays['period'].fillna(method='ffill').fillna('1st')
 
         # tidying up unnecessary information
         game_plays = tidy_game_plays(game_plays)
@@ -784,6 +784,7 @@ def write_all_plays(series):
 if __name__ == '__main__':
     create_table_plays()
 
+    # create manager for sharing data across processes
     manager = Manager()
     name_space = manager.Namespace()
 
@@ -802,9 +803,9 @@ if __name__ == '__main__':
                                          meta=metadata)
 
     # get seasons from games table to iterate
-    seasons = list(set(name_space.games['season']))
+    seasons = pd.Series(range(start_season_games, end_season_games+1))
 
     write_all_plays(seasons)
 
-    print(Colour.green + 'Plays Data Cleaned' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+    print(Colour.green + 'Plays Data Cleaned ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)

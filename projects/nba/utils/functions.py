@@ -28,11 +28,11 @@ def load_data(df, sql_engine, meta, chunk_size=None):
     try:
         df_sql = sql.Table(f'{df}', meta, autoload=True, autoload_with=sql_engine)
         output = pd.read_sql(sql=sql.select([df_sql]), con=sql_engine, chunksize=chunk_size)
-        print(Colour.green + f'Loaded {df} from SQL' + Colour.end)
+        print(Colour.green + f'Loaded {df} from DB' + Colour.end)
     except NoSuchTableError:
         print(Colour.red + f'Table {df} does not exist in DB' + Colour.end)
     except NameError:
-        print(Colour.red + f'Could not load table {df} from SQL' + Colour.end)
+        print(Colour.red + f'Could not load table {df} from DB' + Colour.end)
 
     return output
 
@@ -48,9 +48,9 @@ def write_data(df,
     # write to sql
     try:
         df.to_sql(name, con=sql_engine, schema=db_schema, if_exists=if_exists, index=index)
-        status_sql = Colour.green + 'MySQL (Success)' + Colour.end
+        status_sql = Colour.green + 'DB (Success)' + Colour.end
     except OperationalError:
-        status_sql = Colour.red + 'MySQL (Failed)' + Colour.end
+        status_sql = Colour.red + 'DB (Failed)' + Colour.end
 
     status = {"sql": status_sql}
 

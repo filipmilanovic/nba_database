@@ -3,7 +3,6 @@ import sqlalchemy as sql
 from modelling.projects.nba.utils.colours import *
 from modelling.projects.nba.utils.environment import *
 from sqlalchemy.exc import ProgrammingError
-import inspect
 
 
 # Set up MySQL Connections
@@ -27,10 +26,11 @@ except sql.exc.OperationalError:
 
 
 # Set up generic queries
-def get_table_query(meta, eng, name):
+def get_table_query(meta, eng, name, column, cond):
     meta.reflect(bind=eng)
     table = meta.tables[name]
-    output = sql.sql.select([table])
+
+    output = sql.sql.select([table]).where(table.c[column].in_(cond))
     return output
 
 
@@ -113,6 +113,16 @@ def create_table_plays():
                   sql.Column('event_value', sql.SMALLINT),
                   sql.Column('event_detail', sql.VARCHAR(32)),
                   sql.Column('possession', sql.SMALLINT))
+        metadata.create_all()
+
+
+def create_table_plays_players():
+    if not engine.dialect.has_table(engine, 'plays_players'):
+        sql.Table('plays_players', metadata,
+                  sql.Column('play_id', sql.VARCHAR(16), primary_key=True, nullable=False),
+                  sql.Column('game_id', sql.VARCHAR(12)),
+                  sql.Column('players', sql.VARCHAR(49)),
+                  sql.Column('opp_players', sql.VARCHAR(49)))
         metadata.create_all()
 
 

@@ -2,7 +2,7 @@
 from modelling.projects import dt
 
 # Dates for table games
-start_season_games = 2001
+start_season_games = 2020
 end_season_games = 2020
 
 # Dates for table plays
