@@ -57,12 +57,13 @@ Basketball Reference for all games that appear within both the nba.games table, 
 [cleaning.plays.py](projects/nba/data/cleaning/plays.py) - this applies logic to all raw play by play rows in
 `nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
 becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes the data to `nba.plays` in the DB.
-(~1.5 hours)
+(~1 hour)
 
 [cleaning.plays_players.py](projects/nba/data/cleaning/plays_players.py) - this figures out which players were on the
 court at any point in time.  Basketball Reference doesn't show substitutions at quarter/half breaks, so this looks
 through plays in each quarter, and figures out which players contributed/substituted.  In some cases, a player plays an
-entire quarter without any contributions, so the box scores are scraped to figure out where the minutes discrepancies occur.
+entire quarter without any contributions, so the box scores are scraped to figure out where the minutes discrepancies
+occur. (~45 minutes)
 
 ### Analysis & Modelling
 #### Potential analyses
@@ -73,12 +74,12 @@ entire quarter without any contributions, so the box scores are scraped to figur
 
 ### Planned Development
 *Note: all data and modelling files that are not listed above are currently not in use.*
-* Write [cleaning.game_logs.py](projects/nba/data/cleaning/plays.py) script to create a nicer dataset for predictive
+* Write [cleaning.game_logs.py](projects/nba/data/cleaning/game_logs.py) script to create a nicer dataset for predictive
   analysis
 * ~~Update [cleaning.plays.py](projects/nba/data/cleaning/plays.py) to include possession indicator and which players
   are on the court~~
 * ~~Add automated performance testing~~
-* Update all data modules to be faster (e.g. multi-processing, writing output in batches, more efficient code)
+* ~~Update all data modules to be faster (e.g. multi-processing, writing output in batches, more efficient code)~~
 * Set up central control to build dataset from one script
 * **Goal is to scrape 20 seasons of data reasonably quickly and accurately**
 
@@ -87,5 +88,3 @@ entire quarter without any contributions, so the box scores are scraped to figur
 * Missing rebounds when a shot doesn't show up in Basketball Reference, or there is a substitution 'after' a missed FT,
   so the shooter is not picked up
 * Odds scraping occasionally misses a page as the page doesn't load in time
-* Players occasionally substitute for each other, despite both apparently already being on the court (e.g. Q2 of
-  200012050HOU with H. Davis and G. Buckner)

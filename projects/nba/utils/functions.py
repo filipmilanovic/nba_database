@@ -91,24 +91,14 @@ def swap_rows(df, i, j, direction):
 
     if direction == 'forward':
         for row in range(i, j):
-            # print(str(row) + str(df.loc[row, 'event']))
             df.loc[row] = df.loc[row+1]
-        # print(temp)
+
         df.loc[j] = temp
 
     elif direction == 'back':
         for row in reversed(range(j, i+1)):
-            # print(row)
             df.loc[row] = df.loc[row-1]
 
         df.loc[j] = temp
 
     return df, j
-
-
-# def swap_rows(df, i):
-#     temp = df.loc[i].copy()
-#     df.loc[i] = df.loc[i + 1]
-#     df.loc[i + 1] = temp
-#
-#     return df

@@ -584,6 +584,9 @@ def get_substitution_data(row):
               0  # possession
               ]
 
+    if sub_player_id is None:
+        output = []
+
     log_performance()
     return output
 
@@ -634,7 +637,7 @@ def clean_plays(cols, games_lineups, df):
         elif 'Violation' in play:
             output = output + [get_violation_data(row)]
         elif 'enters the game' in play:
-            output = output + [get_substitution_data(row)]
+            output = [i for i in output + [get_substitution_data(row)] if i]
         elif 'timeout' in play:
             output = output + [get_timeout_data(row)]
 
@@ -864,7 +867,6 @@ def get_plays_raw_query(series):
 
 def write_all_plays(series):
     # iterate through seasons
-    # for season in series:
     for season in series:
         # share game_ids for the season across processes
         name_space.game_ids = get_season_game_ids(season)
