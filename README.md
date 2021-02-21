@@ -87,3 +87,5 @@ entire quarter without any contributions, so the box scores are scraped to figur
 * Missing rebounds when a shot doesn't show up in Basketball Reference, or there is a substitution 'after' a missed FT,
   so the shooter is not picked up
 * Odds scraping occasionally misses a page as the page doesn't load in time
+* Players occasionally substitute for each other, despite both apparently already being on the court (e.g. Q2 of
+  200012050HOU with H. Davis and G. Buckner)

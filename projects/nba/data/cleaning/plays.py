@@ -512,14 +512,20 @@ def get_foul_data(row):
     reversed_fouls = ['Away from play foul',
                       'Clear path foul',
                       'Def 3 sec tech foul',
+                      'Double technical foul',
+                      'Elbow foul',
                       'Flagrant foul',
+                      'Hanging tech foul',
+                      'Ill def tech foul',
                       'Inbound foul',
+                      'Non unsport tech foul',
                       'Offensive charge foul',
                       'Personal foul',
                       'Personal block foul',
                       'Personal take foul',
                       'Shooting foul',
-                      'Shooting block foul']
+                      'Shooting block foul',
+                      'Taunting technical foul']
     event = re.search(r'(.*) foul', play).group(0)
     reverse = any(x in event for x in reversed_fouls)
 
@@ -639,9 +645,9 @@ def clean_plays(cols, games_lineups, df):
 
 
 # any additional tidying goes here
-def tidy_game_plays(df):
+def period_start_end_teams(df):
     # get list of teams
-    teams = [i for i in set(df.team_id) if i is not None]
+    teams = [i for i in set(df['team_id']) if i is not None]
 
     # get index of period start rows
     period_start = df.index[df['event'] == 'Period Start']
@@ -655,13 +661,101 @@ def tidy_game_plays(df):
 
     # get data from previous row
     for i in period_end:
-        if df.possession[i-1] == 1 or df.event[i-1] == 'Assist':
-            team_id = teams[teams != df.team_id[i-1]]
+        if df.loc[i-1, 'possession'] == 1 or df.loc[i-1, 'event'] == 'Assist':
+            team_id = teams[teams != df.loc[i-1, 'team_id']]
         else:
-            team_id = df.team_id[i-1]
+            team_id = df.loc[i-1, 'team_id']
         df.loc[i, 'team_id'] = team_id
 
     log_performance()
+    return df
+
+
+def fix_jump_ball_order(df):
+    """ if jump ball comes before period start, swap the rows """
+    for i in df.index[df['event'] == 'Jump Ball']:
+        if df.loc[i+1, 'event'] == 'Period Start':
+            df, index = swap_rows(df, i, i+1, 'forward')
+
+    return df
+
+
+def fix_substitution_order(df):
+    """ if player subs on at the same time as performing an action, put the sub before the play """
+    # get all sub events and loop through
+    sub_events = df.loc[df['event'] == 'Substitution']
+
+    for row in sub_events.iterrows():
+        # find current position of sub event
+        i = df.index[(df['period'] == row[1]['period']) &
+                     (df['time'] == row[1]['time']) &
+                     (df['player_id'] == row[1]['player_id']) &
+                     (df['event'] == 'Substitution')][0]
+
+        # get relevant event details
+        event_period = df.loc[i, 'period']
+        event_time = df.loc[i, 'time']
+        subbed_in = df.loc[i, 'player_id']
+        subbed_out = df.loc[i, 'event_detail']
+
+        # fix for events after player subs out
+        events_out = df[(df['period'] == event_period) & (df['time'] == event_time) & (df.index > i)]
+
+        # get all events involving the player after subbing out
+        fix_table = events_out[((events_out['player_id'] == subbed_out) |
+                                (events_out['event_detail'] == subbed_out))]
+
+        # use latest play to fix if fixing forwards
+        if not fix_table.empty:
+            # if another event involves the player subbing back in, skip it
+            fix_index = fix_table.index[(fix_table['player_id'] == subbed_out) &
+                                        (fix_table['event'] == 'Substitution')]
+
+            # set sub to after the latest event
+            if fix_index.empty:
+                df, i = swap_rows(df, i, fix_table.index[len(fix_table)-1], 'forward')
+            else:
+                pass
+
+        # fix for events before player subbing in
+        events_in = df[(df['period'] == event_period) & (df['time'] == event_time) & (df.index < i)]
+
+        # get all events involving the player before subbing in
+        fix_table = events_in[((events_in['player_id'] == subbed_in) |
+                               (events_in['event_detail'] == subbed_in))]
+
+        # use earliest play to fix if fixing backwards
+        if not fix_table.empty:
+            # if player was just subbed out, then set to play after
+            fix_index = fix_table.index[(fix_table['event_detail'] == subbed_in) &
+                                        (fix_table['event'] == 'Substitution')] + 1
+
+            if fix_index.empty:
+                # set sub to before the earliest event
+                df, i = swap_rows(df, i, fix_table.index[0], 'back')
+            else:
+                pass
+
+    return df
+
+
+def fix_incorrect_team(df, lineups):
+    """ if player-team combination doesn't make sense, drop it """
+    # drop plays without a player
+    df_players = df.dropna(axis=0, subset=['player_id'])
+
+    # perform join to be able to find null roles, and reset index to keep matched to original
+    drop_table = pd.merge(left=df_players,
+                          right=lineups,
+                          how='left',
+                          on=['game_id', 'player_id', 'team_id']).set_index(df_players.index)
+
+    # ignore substitutions as these often seem to be a BBall Ref issue, and do not seem to have negative impact
+    drop_index = drop_table.index[(drop_table['role'].isnull()) &
+                                  (drop_table['event'] != 'Substitution')]
+
+    df = df[~df.index.isin(list(drop_index))].reset_index(drop=True)
+
     return df
 
 
@@ -682,14 +776,23 @@ def write_game_plays(ns, queue):
         # base tidying up of events, details, period start and time
         game_plays = clean_plays(columns, games_lineups, game_plays_raw).reset_index(drop=True)
 
+        # check that Start of period comes before Jump ball
+        game_plays = fix_jump_ball_order(game_plays)
+
         # fill down period from start of period row
         game_plays['period'] = game_plays['period'].fillna(method='ffill').fillna('1st')
 
-        # tidying up unnecessary information
-        game_plays = tidy_game_plays(game_plays)
+        # tidying up team_id for period start and end
+        game_plays = period_start_end_teams(game_plays)
+
+        # tidy substitution order
+        game_plays = fix_substitution_order(game_plays)
+
+        # check incorrect team situations
+        game_plays = fix_incorrect_team(game_plays, games_lineups)
 
         # generate column of scores
-        game_plays.score = get_score(game_plays)
+        game_plays['score'] = get_score(game_plays)
 
         # get play_id
         game_plays['play_id'] = get_play_id(game_plays)
@@ -761,9 +864,14 @@ def get_plays_raw_query(series):
 
 def write_all_plays(series):
     # iterate through seasons
+    # for season in series:
     for season in series:
         # share game_ids for the season across processes
         name_space.game_ids = get_season_game_ids(season)
+
+        # load lineups to assist with assigning players to teams
+        games_lineups_query = get_table_query(metadata, engine, 'games_lineups', 'game_id', name_space.game_ids)
+        name_space.games_lineups = pd.read_sql(sql=games_lineups_query, con=engine)
 
         # get selectable object sql query to get raw plays for the season
         selectable = get_plays_raw_query(name_space.game_ids)
@@ -796,11 +904,6 @@ if __name__ == '__main__':
     name_space.games = load_data(df='games',
                                  sql_engine=engine,
                                  meta=metadata)
-
-    # load lineups to assist with assigning players to teams
-    name_space.games_lineups = load_data(df='games_lineups',
-                                         sql_engine=engine,
-                                         meta=metadata)
 
     # get seasons from games table to iterate
     seasons = pd.Series(range(start_season_games, end_season_games+1))
