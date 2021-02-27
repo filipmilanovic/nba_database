@@ -5,6 +5,7 @@ from datetime import datetime as dt
 import time  # used to calculate time lapsed when running
 import timeit
 import pandas as pd
+import sys
 pd.options.mode.chained_assignment = None  # stop SettingWithCopyWarning error
 
 # Create root path

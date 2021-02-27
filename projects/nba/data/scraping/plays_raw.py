@@ -1,5 +1,6 @@
 # SCRAPING PLAY BY PLAY DATA
 from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.utils import *
 from modelling.projects.nba.data.scraping import *
 
 
@@ -90,7 +91,6 @@ def write_raw_plays(iteration):
 
     status = write_data(df=game_plays,
                         name='plays_raw',
-                        to_csv=False,
                         sql_engine=engine_raw,
                         db_schema='nba_raw',
                         if_exists='append',
@@ -100,43 +100,36 @@ def write_raw_plays(iteration):
              iterations=len(game_ids),
              iteration_name=game_ids[iteration],
              lapsed=time_lapsed(),
-             sql_status=status['sql'],
-             csv_status=status['csv'])
+             sql_status=status['sql'])
 
 
 def write_all_raw_plays():
     iterations = range(len(game_ids))
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         executor.map(write_raw_plays, iterations)
+        executor.shutdown()
 
 
 if __name__ == '__main__':
+    create_table_plays_raw()
+
     # column names for plays_raw table
     columns = ['plays', 'player_1', 'player_2', 'player_3', 'game_id']
 
-    # get plays_raw dataframe from DB, or build from scratch
-    plays_raw = initialise_df(table_name='plays_raw',
-                              columns=columns,
-                              sql_engine=engine_raw,
-                              meta=metadata_raw)
-
-    # load games table to help set up loop
-    games = load_data(df='games',
-                      sql_engine=engine,
-                      meta=metadata)
-
     # create game index for accessing website
-    game_ids = games['game_id']
+    selectable = get_column_query(metadata, engine, 'games', 'game_id')
+    game_ids = pd.read_sql(sql=selectable, con=connection)['game_id']
 
     # skip games that have already been scraped
     if SKIP_SCRAPED_GAMES:
-        game_ids = game_ids[~game_ids.isin(plays_raw['game_id'])].reset_index(drop=True)
-    else:  # clear rows where play data already exists
-        clear_game_ids = "', '".join(game_ids)
-        try:
-            connection_raw.execute(f"delete from nba_raw.plays_raw where game_id in ('{clear_game_ids}')")
-        except ProgrammingError:
-            pass
+        selectable = get_column_query(metadata_raw, engine_raw, 'plays_raw', 'game_id')
+        skip_games = pd.read_sql(sql=selectable, con=connection_raw)['game_id']
+
+        game_ids = game_ids[~game_ids.isin(skip_games)].reset_index(drop=True)
+    else:
+        # clear rows where play data already exists
+        selectable = get_delete_query(metadata_raw, engine_raw, 'plays_raw', 'game_id', game_ids)
+        connection_raw.execute(selectable)
 
     # defining threads
     thread_local = threading.local()

@@ -1,5 +1,6 @@
 # SCRAPING PLAY BY PLAY DATA
 from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.utils import *
 from modelling.projects.nba.data.scraping import *
 
 
@@ -102,6 +103,7 @@ def write_lineup(iteration):
 
     # get teams
     teams = get_teams(game_id)
+
     home_team = teams['home_team'].item()
     away_team = teams['away_team'].item()
 
@@ -113,7 +115,6 @@ def write_lineup(iteration):
 
     status = write_data(df=output,
                         name='games_lineups',
-                        to_csv=False,
                         sql_engine=engine,
                         db_schema='nba',
                         if_exists='append',
@@ -123,8 +124,7 @@ def write_lineup(iteration):
              iterations=len(game_ids),
              iteration_name=game_id,
              lapsed=time_lapsed(),
-             sql_status=status['sql'],
-             csv_status=status['csv'])
+             sql_status=status['sql'])
 
     log_performance()
     return output
@@ -134,19 +134,16 @@ def write_all_lineups():
     iterations = range(len(game_ids))
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         executor.map(write_lineup, iterations)
+        executor.shutdown()
 
 
 if __name__ == '__main__':
+    create_table_games_lineups()
+
     # column names for plays_raw table
     columns = ['game_id', 'team_id', 'player_id', 'role']
 
-    # get plays_raw dataframe from DB, or build from scratch
-    games_lineups = initialise_df(table_name='games_lineups',
-                                  columns=columns,
-                                  sql_engine=engine,
-                                  meta=metadata)
-
-    # load games table to help set up loop
+    # load games table to help set up loop and to return team names
     games = load_data(df='games',
                       sql_engine=engine,
                       meta=metadata)
@@ -154,18 +151,16 @@ if __name__ == '__main__':
     # create game index for accessing website
     game_ids = games['game_id']
 
-    # create table in DB if not exists
-    create_table_games_lineups()
-
     # skip games that have already been scraped
     if SKIP_SCRAPED_GAMES:
-        game_ids = game_ids[~game_ids.isin(games_lineups['game_id'])].reset_index(drop=True)
-    else:  # clear rows where play data already exists
-        clear_game_ids = "', '".join(game_ids)
-        try:
-            connection_raw.execute(f"delete from nba.games_lineups where game_id in ('{clear_game_ids}')")
-        except ProgrammingError:
-            pass
+        selectable = get_column_query(metadata, engine, 'games_lineups', 'game_id')
+        skip_game_ids = pd.read_sql(sql=selectable, con=connection)['game_id']
+
+        game_ids = game_ids[~game_ids.isin(skip_game_ids)].reset_index(drop=True)
+    else:
+        # clear rows where play data already exists
+        selectable = get_delete_query(metadata, engine, 'games_lineups', 'game_id', game_ids)
+        connection.execute(selectable)
 
     # defining threads
     thread_local = threading.local()

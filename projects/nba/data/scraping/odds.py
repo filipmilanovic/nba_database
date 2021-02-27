@@ -1,5 +1,6 @@
 # SCRAPING ODDS DATA
 from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba.utils import *
 from modelling.projects.nba.data.scraping import *
 
 
@@ -203,8 +204,7 @@ def get_season_data(season):
                  iterations=max_page_number,
                  iteration_name=str(season) + ' Season',
                  lapsed=time_lapsed(),
-                 sql_status='',
-                 csv_status='')
+                 sql_status='')
 
         page_number += 1
 
@@ -212,7 +212,6 @@ def get_season_data(season):
 
     write_data(df=season_odds,
                name='odds',
-               to_csv=False,
                sql_engine=engine,
                db_schema='nba',
                if_exists='append',
@@ -220,35 +219,37 @@ def get_season_data(season):
 
 
 if __name__ == '__main__':
+    create_table_odds()
+
     columns = ['game_id', 'home_odds', 'away_odds']
 
-    # get plays_raw dataframe from DB, or build from scratch
-    odds = initialise_df(table_name='odds',
-                         columns=columns,
-                         sql_engine=engine,
-                         meta=metadata)
-
-    # Load games
+    # Load games for matching
     games = load_data(df='games',
                       sql_engine=engine,
                       meta=metadata)
 
-    create_table_odds()
+    season_range = pd.Series(range(start_season_odds, end_season_odds + 1))
 
-    season_range = range(start_season_odds, end_season_odds + 1)
+    if SKIP_SCRAPED_GAMES:
+        # return game_ids of already scraped odds
+        selectable = get_column_query(metadata, engine, 'odds', 'game_id')
+        skip_game_ids = pd.read_sql(sql=selectable, con=connection)['game_id']
 
-    game_ids = games.loc[games['season'].isin(season_range), 'game_id']
+        # find seasons of existing game_ids and remove from iterations
+        games_seasons = list(set(games.loc[games['game_id'].isin(skip_game_ids), 'season']))
+        season_range = season_range[~season_range.isin(games_seasons)]
+    else:
+        # get game_ids for the selected seasons
+        game_ids = games.loc[games['season'].isin(season_range), 'game_id']
 
-    # get the game_ids to clear
-    clear_game_ids = "', '".join(game_ids)
-
-    try:
-        connection_raw.execute(f"delete from nba.odds where game_id in ('{clear_game_ids}')")
-    except ProgrammingError:
-        pass
+        # get query to remove data that is being re-scraped
+        selectable = get_delete_query(metadata, engine, 'odds', 'game_id', game_ids)
+        connection.execute(selectable)
 
     # using selenium web driver as requests seem to return 'page not found' issues
     driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
                               options=options)
 
     get_odds_data(season_range)
+
+    driver.quit()

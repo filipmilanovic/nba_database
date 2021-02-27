@@ -1,5 +1,6 @@
 # SCRAPING GAME DATA
-from modelling.projects.nba import *  # import all project specific utils
+from modelling.projects.nba import re, threading, concurrent
+from modelling.projects.nba.utils import *  # import all project specific utils
 from modelling.projects.nba.data.scraping import *
 
 
@@ -136,7 +137,6 @@ def write_season_data(iteration):
 
     status = write_data(df=yearly,
                         name='games',
-                        to_csv=False,
                         sql_engine=engine,
                         db_schema='nba',
                         if_exists='append',
@@ -146,49 +146,44 @@ def write_season_data(iteration):
              iterations=len(season_range),
              iteration_name='Season ' + str(season_range[iteration]),
              lapsed=time_lapsed(),
-             sql_status=status['sql'],
-             csv_status=status['csv'])
+             sql_status=status['sql'])
+
+    driver.quit()
 
 
 def write_all_games_data():
     iterations = range(len(season_range))
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        # initialise selenium driver
         executor.map(write_season_data, iterations)
+        executor.shutdown()
 
 
 if __name__ == '__main__':
+    create_table_games()
+
     # column names for games table
     columns = ['game_id', 'game_date', 'home_team', 'home_score', 'away_team', 'away_score', 'season', 'is_playoffs']
 
-    # get games dataframe from DB, or build from scratch
-    games = initialise_df(table_name='games',
-                          columns=columns,
-                          sql_engine=engine,
-                          meta=metadata)
-
-    create_table_games()
-
     # pick up date range from parameters
-    season_range = range(start_season_games, end_season_games+1)
+    season_range = pd.Series(range(start_season_games, end_season_games+1))
 
-    # get the seasons to clear
-    clear_seasons = "', '".join([str(i) for i in season_range])
+    if SKIP_SCRAPED_GAMES:
+        # return seasons of existing games
+        selectable = get_column_query(metadata, engine, 'games', 'season')
+        skip_seasons = pd.read_sql(sql=selectable, con=connection)['season']
 
-    # clear rows where games already exists
-    try:
-        connection_raw.execute(f"delete from nba.games where season in ('{clear_seasons}')")
-    except ProgrammingError:
-        pass
+        # remove seasons from iterations where already exists
+        season_range = season_range[~season_range.isin(skip_seasons)].reset_index(drop=True)
+    else:
+        # get query to remove data that is being re-scraped
+        selectable = get_delete_query(metadata, engine, 'games', 'season', season_range)
+        connection.execute(selectable)
 
     # defining threads
     thread_local = threading.local()
 
     # scrape all lineups and write them to the DB
     write_all_games_data()
-
-    webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
-                     options=options).quit()
 
     # return to regular output writing
     sys.stdout.write('\n')
