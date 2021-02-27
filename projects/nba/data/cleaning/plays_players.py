@@ -150,28 +150,113 @@ def play_players_check(players, game_id, team_id, period):
 def fill_players_down(players, events, subbed_in, subbed_out):
     """ if players missing, fill down based on players in previous play """
     players.reverse()
-    events = events.iloc[::-1]
-    subbed_out = subbed_out.iloc[::-1]
-    subbed_in = subbed_in.iloc[::-1]
+    events = events.iloc[::-1].reset_index(drop=True)
+    subbed_out = subbed_out.iloc[::-1].reset_index(drop=True)
+    subbed_in = subbed_in.iloc[::-1].reset_index(drop=True)
 
+    incorrect_player = None
     remove_player = None
+    true_on = None
+    true_off = None
+    false_on = None
+    false_off = None
+
+    # if period starts with 6 players, then there were likely false subs involved
+    if len(players[0]) > 5:
+        # find all players who did not do anything
+        events_players = [i for i in subbed_in[events != 'Substitution'] if i]
+        all_event_players = list(set(events_players))
+
+        # find all unique players for period
+        all_players = list(set([inner for outer in players for inner in outer]))
+
+        try:
+            incorrect_player = list(set(all_players) - set(all_event_players))[0]
+            players[0].remove(incorrect_player)
+        except (IndexError, ValueError):
+            pass
 
     # find players in current play that weren't in previous play
     for i in range(1, len(players)):
-        if events.iloc[i] == 'Substitution':
-            # if there's a substitution find who was subbed out
-            player_off = [subbed_out.iloc[i]]
-            player_on = [subbed_in.iloc[i]]
+        # remove player tagged as the false '6th man'
+        if incorrect_player in players[i]:
+            players[i].remove(incorrect_player)
+
+        if events.loc[i] == 'Substitution':
+            # if there's a substitution find who was substituted
+            player_off = [subbed_out.loc[i]]
+            player_on = [subbed_in.loc[i]]
+
+            # in case of incorrect sub over multiple plays, remove true subbed in player
+            if true_on in players[i]:
+                players[i].remove(true_on)
+
+            # if player designated as false sub is brought on properly, clear designation
+            if player_on[0] == incorrect_player != false_off:
+                players[i] = players[i] + [incorrect_player]
+                incorrect_player = None
 
             # if subbed out player still in, designate to remove
             if player_off[0] in players[i]:
                 remove_player = player_off[0]
 
-            # if subbed in player was already on, skip the sub
+            # THIS SECTION COVERS SUBS WHERE AN ALREADY OFF-COURT PLAYER WAS SUBBED OFF
+            # if incorrect player was subbed off in play by play, this fixes it in the make-up sub
+            if player_on[0] == false_off:
+                # replace falsely taken off player with actually substituted player
+                players[i] = [player.replace(false_off, true_on) for player in players[i]]
+
+                # check if fixed, and append player if needed
+                if true_on not in players[i]:
+                    players[i].append(true_on)
+
+                #  if the incorrect sub is explained by this bug, clear the removed player
+                if false_off == remove_player:
+                    remove_player = ''
+
+                # clear incorrect subs bug fix variables
+                false_off = None
+                true_on = None
+
+            # if subbed out player was already off, skip the sub, then note the players involved for check in next play
+            if player_off[0] not in players[i-1]:
+                if player_on[0] in players[i]:
+                    players[i].remove(player_on[0])
+
+                # this player was meant to remain on the court
+                false_off = player_off[0]
+
+                # this player is meant to come on and the make-up sub will fix this
+                true_on = player_on[0]
+
+            # THIS SECTION COVERS SUBS WHERE AN ALREADY ON-COURT PLAYER WAS SUBBED ON
+            # if incorrect player was subbed on in play by play, this fixes it in the make-up sub
+            if player_off[0] == false_on:
+                # replace actually substituted player with falsely taken off player
+                players[i] = [player.replace(true_off, false_on) for player in players[i]]
+
+                # ensure this player is not re-added
+                player_off = [true_off]
+
+                #  if the incorrect sub is explained by this bug, clear the removed player
+                if false_on == remove_player:
+                    remove_player = ''
+
+                # clear incorrect subs bug fix variables
+                false_on = None
+                true_off = None
+
+            # if subbed in player was already on, skip the sub, then note the players involved for check in next play
             if player_on[0] in players[i-1]:
+                # this player is taken off in the next play
+                true_off = player_off[0]
+
+                # this player was already on and the make-up sub comes after
+                false_on = player_on[0]
+
                 player_off = []
 
-            # if player designated to remove subbed back in, clear designation
+            # if player designated to remove subs back in, clear designation
             if subbed_in.iloc[i] == remove_player:
                 remove_player = ''
 
@@ -180,19 +265,42 @@ def fill_players_down(players, events, subbed_in, subbed_out):
         else:
             new_players = list(set(players[i-1]) - set(players[i]))
 
-        try:
-            # add on distinct new player, and remove any designated players
-            players[i] = list(OrderedSet(players[i] + new_players))
+        # add on distinct new player
+        players[i] = list(OrderedSet(players[i] + new_players))
+
+        # remove any designated players, and clear designation if no longer on court
+        if remove_player in players[i]:
             players[i].remove(remove_player)
-        except ValueError:
-            # clear designation if player no longer on court
-            players[i] = list(OrderedSet(players[i] + new_players))
+        else:
             remove_player = ''
+
     return players
+
+
+def manual_bug_fixes(players, df):
+    if [df['game_id'], str(df['time']), df['player_id']] == ['200502230DEN', '12:00:00', 'boykiea01']:
+        players.remove('boykiea01')
+
+    return players
+
+
+def check_manual_fix_game(game_id, period, team_id):
+    if [game_id, period, team_id] in [['200502230DEN', '3rd', 'DEN']]:
+        output = True
+    else:
+        output = False
+
+    return output
 
 
 def find_on_court_players(plays, game_id, team_id, period):
     """ go through play information to figure out which players are on the court """
+    # ignore plays after period end, if it exists, as these can be incorrect and cause errors
+    try:
+        plays = plays[plays.index <= plays.index[plays['event'] == 'Period End'][0]]
+    except IndexError:
+        pass
+
     # reverse plays
     period_plays = plays.iloc[::-1]
 
@@ -207,9 +315,12 @@ def find_on_court_players(plays, game_id, team_id, period):
     # get first player
     latest_players = [i for i in [player_ids.iloc[0]] if i]
 
+    # designate if period needs manual bug fix
+    fix_needed = check_manual_fix_game(game_id, period, team_id)
+
     for i in range(1, len(player_ids)):
-        # get current play player_id (except fouls, to avoid bench players)
-        if ' foul' in events.iloc[i].lower():
+        # get current play player_id (except fouls, to avoid potential bench players)
+        if any(string in events.iloc[i].lower() for string in [' foul', 'technical']):
             player_id = None
         else:
             player_id = player_ids.iloc[i]
@@ -229,6 +340,9 @@ def find_on_court_players(plays, game_id, team_id, period):
 
         # append current player_ids to list of player_ids
         players.append(play_players)
+
+        if fix_needed:
+            play_players = manual_bug_fixes(play_players, period_plays.iloc[i])
 
         # update latest players
         latest_players = play_players

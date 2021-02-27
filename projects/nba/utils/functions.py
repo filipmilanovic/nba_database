@@ -86,6 +86,23 @@ def find_occurrence(x, y, n):
     return output
 
 
+def insert_row(df, index, values):
+    # get rows from before desired index
+    df_before = df[df.index < index]
+
+    # append the desired row
+    df_before.loc[index] = values
+
+    # add 1 to index of rows after index
+    df_after = df[df.index >= index]
+    df_after.index += 1
+
+    # join together
+    output = pd.concat((df_before, df_after))
+
+    return output
+
+
 def swap_rows(df, i, j, direction):
     temp = df.loc[i].copy()
 

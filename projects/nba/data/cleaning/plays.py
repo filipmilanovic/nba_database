@@ -706,7 +706,8 @@ def fix_substitution_order(df):
 
         # get all events involving the player after subbing out
         fix_table = events_out[((events_out['player_id'] == subbed_out) |
-                                (events_out['event_detail'] == subbed_out))]
+                                (events_out['event_detail'] == subbed_out)) &
+                               ~events_out['event'].str.contains('foul')]
 
         # use latest play to fix if fixing forwards
         if not fix_table.empty:
@@ -725,7 +726,8 @@ def fix_substitution_order(df):
 
         # get all events involving the player before subbing in
         fix_table = events_in[((events_in['player_id'] == subbed_in) |
-                               (events_in['event_detail'] == subbed_in))]
+                               (events_in['event_detail'] == subbed_in)) &
+                              ~events_in['event'].str.contains('foul')]
 
         # use earliest play to fix if fixing backwards
         if not fix_table.empty:
@@ -762,6 +764,117 @@ def fix_incorrect_team(df, lineups):
     return df
 
 
+def manual_period_fix(df, game_id):
+    """ if a game has a non-standard bug, or missing information, manually update it """
+    if game_id == '201311270DAL':
+        # this game was missing a sub in the 4th
+        index = df.index[(df['time'] == '5:49') & (df['event'] == 'Timeout')]
+        row_to_add = [None, game_id, None, '5:49', None, 'DAL', 'blairde01', 'Substitution', 1, 'dalemsa01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+    elif game_id == '201401010MIN':
+        # this game was missing a sub in 4th
+        index = df.index[(df['time'] == '7:34') & (df['player_id'] == 'rubiori01') & (df['event'] == 'Substitution')]
+        row_to_add = [None, game_id, None, '7:34', None, 'MIN', 'martike02', 'Substitution', 1, 'shvedal01', 0]
+        df = insert_row(df, index[0]+1, row_to_add)
+    elif game_id == '201503150LAL':
+        # this game was missing a sub in 4th
+        index = df.index[(df['time'] == '6:41') & (df['event'] == 'Defensive rebound')]
+        row_to_add = [None, game_id, None, '6:41', None, 'ATL', 'jenkijo01', 'Substitution', 1, 'bazemke01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+    elif game_id == '201503160GSW':
+        # this game was missing period start/end signifiers
+        df.loc[(df['time'] == '11:42') & (df['event'] == 'FG Shot') & (df['event_detail'] == '2'), 'period'] = '2nd'
+        df.loc[(df['time'] == '11:40') & (df['event'] == 'FG Shot') & (df['event_detail'] == '20'), 'period'] = '3rd'
+        df.loc[(df['time'] == '12:00') & (df['event'] == 'FT Shot') & (df['event_detail'] == '2'), 'period'] = '4th'
+    elif game_id == '201505050GSW':
+        # this game was missing a sub in the 4th
+        index = df.index[(df['time'] == '1:03') & (df['event'] == 'Timeout')]
+        row_to_add = [None, game_id, None, '1:03', None, 'MEM', 'greenje02', 'Substitution', 1, 'conlemi01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+    elif game_id == '201601030NYK':
+        # this game was missing many subs in 2nd - will add them in reverse order
+        # Horford for Taveres at 2:07
+        index = df.index[(df['time'] == '2:07') & (df['event'] == 'FT Make') & (df['event_detail'] == '1')]
+        row_to_add = [None, game_id, None, '2:07', None, 'ATL', 'horfoal01', 'Substitution', 1, 'tavarwa01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        # Porzingis for Williams at 3:07
+        index = df.index[(df['time'] == '3:07') & (df['event'] == 'Shooting foul')]
+        row_to_add = [None, game_id, None, '3:07', None, 'NYK', 'porzikr01', 'Substitution', 1, 'willide02', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        # multiple subs at 5:36 and one at 5:28 (consecutive subs)
+        index = df.index[(df['time'] == '5:36') & (df['event'] == 'Timeout')]
+        row_to_add = [None, game_id, None, '5:28', None, 'NYK', 'lopezro01', 'Substitution', 1, 'porzikr01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        row_to_add = [None, game_id, None, '5:36', None, 'ATL', 'tavarwa01', 'Substitution', 1, 'horfoal01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        row_to_add = [None, game_id, None, '5:36', None, 'NYK', 'caldejo01', 'Substitution', 1, 'grantje02', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        row_to_add = [None, game_id, None, '5:36', None, 'ATL', 'bazemke01', 'Substitution', 1, 'pattela01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        row_to_add = [None, game_id, None, '5:36', None, 'ATL', 'sefolth01', 'Substitution', 1, 'korveky01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        # Millsap for Scott at 7:10
+        index = df.index[(df['time'] == '7:10') & (df['event'] == 'Substitution')]
+        row_to_add = [None, game_id, None, '7:10', None, 'ATL', 'millspa01', 'Substitution', 1, 'scottmi01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        # two subs at 8:05
+        index = df.index[(df['time'] == '8:05') & (df['event'] == 'Timeout')]
+        row_to_add = [None, game_id, None, '8:05', None, 'NYK', 'afflaar01', 'Substitution', 1, 'thomala01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+        row_to_add = [None, game_id, None, '8:05', None, 'ATL', 'teaguje01', 'Substitution', 1, 'macksh01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+    elif game_id == '201610300HOU':
+        # subs in wrong order after period end, so moved them around
+        move_from = df.index[(df['time'] == '0:00') & (df['player_id'] == 'poweldw01')]
+        move_to = df.index[(df['time'] == '0:00') & (df['event'] == 'Timeout')]
+        df, i = swap_rows(df, move_from[0], move_to[0], 'back')
+    elif game_id == '201710250PHI':
+        # this game had a false sub in the 4th
+        index = df.index[(df['time'] == '5:20') & (df['player_id'] == 'hardeja01') & (df['event'] == 'Substitution')]
+        df = df.drop(index.tolist()).reset_index(drop=True)
+    elif game_id == '201710280MEM':
+        # this game had two false subs in the 2nd
+        index = df.index[((df['time'] == '7:48') & (df['player_id'] == 'hardeja01')
+                         & (df['event_detail'] == 'capelca01')) |
+                         ((df['time'] == '7:48') & (df['player_id'] == 'arizatr01')
+                          & (df['event_detail'] == 'brownbo02'))]
+        df = df.drop(index.tolist()).reset_index(drop=True)
+    elif game_id == '201712230IND':
+        # duplicate subs at the end
+        index = df.index[(df['time'] == '0:00') & (df['player_id'] == 'holliro01')
+                         & (df['event_detail'] == 'zellety01')]
+        df = df.drop(index.tolist())
+        index = df.index[(df['time'] == '0:00') & (df['player_id'] == 'harrijo01')
+                         & (df['event_detail'] == 'allenja01')]
+        df = df.drop(index.tolist()).reset_index(drop=True)
+    elif game_id == '201801280HOU':
+        # this game was missing a sub in 2nd
+        index = df.index[(df['time'] == '12:00') & (df['event'] == 'FT Make')]
+        row_to_add = [None, game_id, None, '11:59', None, 'PHO', 'jacksjo02', 'Substitution', 1, 'bookede01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+    elif game_id == '201802090DET':
+        # this game was missing a sub in 3rd
+        index = df.index[(df['time'] == '12:00') & (df['event'] == 'FT Make')]
+        row_to_add = [None, game_id, None, '11:59', None, 'DET', 'griffbl01', 'Substitution', 1, 'tollian01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+    elif game_id == '201803150DEN':
+        # this game had a false sub in the 4th
+        index = df.index[(df['time'] == '6:22') & (df['player_id'] == 'chandwi01') & (df['event'] == 'Substitution')]
+        df = df.drop(index.tolist()).reset_index(drop=True)
+    elif game_id == '201901280LAC':
+        # this game was missing a sub in 3rd
+        index = df.index[(df['time'] == '12:00') & (df['event'] == 'FT Make')]
+        row_to_add = [None, game_id, None, '12:00', None, 'LAC', 'gilgesh01', 'Substitution', 1, 'willilo02', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+    elif game_id == '202001040LAC':
+        # this game was missing a sub in 3rd
+        index = df.index[(df['time'] == '12:00') & (df['event'] == 'FT Make')]
+        row_to_add = [None, game_id, None, '12:00', None, 'MEM', 'brookdi01', 'Substitution', 1, 'meltode01', 0]
+        df = insert_row(df, index[0] + 1, row_to_add)
+
+    return df
+
+
 def write_game_plays(ns, queue):
     game_ids = ns.game_ids
     plays_raw = ns.plays_raw
@@ -781,6 +894,9 @@ def write_game_plays(ns, queue):
 
         # check that Start of period comes before Jump ball
         game_plays = fix_jump_ball_order(game_plays)
+
+        # set up manual fixes for games with bugs
+        game_plays = manual_period_fix(game_plays, game_ids[iteration])
 
         # fill down period from start of period row
         game_plays['period'] = game_plays['period'].fillna(method='ffill').fillna('1st')

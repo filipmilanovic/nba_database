@@ -74,14 +74,16 @@ occur. (~45 minutes)
 
 ### Planned Development
 *Note: all data and modelling files that are not listed above are currently not in use.*
-* Write [cleaning.game_logs.py](projects/nba/data/cleaning/game_logs.py) script to create a nicer dataset for predictive
+* Write cleaning.game_logs.py script to create a nicer dataset for predictive
   analysis
+* Add ejections to [cleaning.plays.py](projects/nba/data/cleaning/plays.py)
 * ~~Update [cleaning.plays.py](projects/nba/data/cleaning/plays.py) to include possession indicator and which players
   are on the court~~
 * ~~Add automated performance testing~~
 * ~~Update all data modules to be faster (e.g. multi-processing, writing output in batches, more efficient code)~~
 * Set up central control to build dataset from one script
-* **Goal is to scrape 20 seasons of data reasonably quickly and accurately**
+* Move scraping to use nba.com - this is likely to be slower, but should be more accurate, so I can reduce manual fixes,
+and is probably also a bit more 'official'
 
 ### Bug Log
 * Occasionally Basketball Reference has a shot that doesn't show up, or a make that is incorrectly counted as a 2/3
