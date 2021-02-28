@@ -6,23 +6,18 @@ from sqlalchemy.exc import ProgrammingError
 
 
 # Set up MySQL Connections
-try:
-    engine = sql.create_engine('mysql://' + USER + ':' + PASSWORD
-                               + '@' + HOST + '/' + DATABASE + '?charset=utf8mb4')
-    connection = engine.connect()
-    metadata = sql.MetaData(engine)
-    print(Colour.green + 'Established SQL connection to nba schema' + Colour.end)
-except sql.exc.OperationalError:
-    print(Colour.red + "Couldn't establish SQL connection" + Colour.end)
+def get_connection(db):
+    try:
+        engine = sql.create_engine('mysql://' + user + ':' + password
+                                   + '@' + host + '/' + db + '?charset=utf8mb4')
+        connection = engine.connect()
+        metadata = sql.MetaData(engine)
+        print(Colour.green + f'Established SQL connection to {db} schema' + Colour.end)
+    except sql.exc.OperationalError:
+        print(Colour.red + f"Couldn't establish SQL connection to {db}" + Colour.end)
+        engine, metadata, connection = None, None, None
 
-try:
-    engine_raw = sql.create_engine('mysql://' + USER + ':' + PASSWORD
-                                   + '@' + HOST + '/' + DATABASE_RAW + '?charset=utf8mb4')
-    connection_raw = engine_raw.connect()
-    metadata_raw = sql.MetaData(engine_raw)
-    print(Colour.green + 'Established SQL connection to nba_raw schema' + Colour.end)
-except sql.exc.OperationalError:
-    print(Colour.red + "Couldn't establish SQL connection" + Colour.end)
+    return engine, metadata, connection
 
 
 # Set up generic queries
@@ -50,7 +45,7 @@ def get_delete_query(meta, eng, name, column, series):
 
 
 # Set up building of tables
-def create_table_games():
+def create_table_games(engine, metadata):
     if not engine.dialect.has_table(engine, 'games'):
         sql.Table('games', metadata,
                   sql.Column('game_id', sql.VARCHAR(12), primary_key=True, nullable=False),
@@ -64,7 +59,7 @@ def create_table_games():
         metadata.create_all()
 
 
-def create_table_games_lineups():
+def create_table_games_lineups(engine, metadata):
     if not engine.dialect.has_table(engine, 'games_lineups'):
         sql.Table('games_lineups', metadata,
                   sql.Column('game_id', sql.VARCHAR(12), index=True, nullable=False),
@@ -74,7 +69,7 @@ def create_table_games_lineups():
         metadata.create_all()
 
 
-def create_table_odds():
+def create_table_odds(engine, metadata):
     if not engine.dialect.has_table(engine, 'odds'):
         sql.Table('odds', metadata,
                   sql.Column('game_id', sql.VARCHAR(12), index=True, nullable=False),
@@ -83,7 +78,7 @@ def create_table_odds():
         metadata.create_all()
 
 
-def create_table_players():
+def create_table_players(engine, metadata):
     if not engine.dialect.has_table(engine, 'players'):
         sql.Table('players', metadata,
                   sql.Column('player_id', sql.VARCHAR(9), primary_key=True, nullable=False),
@@ -99,7 +94,7 @@ def create_table_players():
         metadata.create_all()
 
 
-def create_table_plays():
+def create_table_plays(engine, metadata):
     if not engine.dialect.has_table(engine, 'plays'):
         sql.Table('plays', metadata,
                   sql.Column('play_id', sql.VARCHAR(16), primary_key=True, nullable=False),
@@ -116,7 +111,7 @@ def create_table_plays():
         metadata.create_all()
 
 
-def create_table_plays_players():
+def create_table_plays_players(engine, metadata):
     if not engine.dialect.has_table(engine, 'plays_players'):
         sql.Table('plays_players', metadata,
                   sql.Column('play_id', sql.VARCHAR(16), primary_key=True, nullable=False),
@@ -126,18 +121,18 @@ def create_table_plays_players():
         metadata.create_all()
 
 
-def create_table_plays_raw():
-    if not engine_raw.dialect.has_table(engine_raw, 'plays_raw'):
-        sql.Table('plays_raw', metadata_raw,
+def create_table_plays_raw(engine, metadata):
+    if not engine.dialect.has_table(engine, 'plays_raw'):
+        sql.Table('plays_raw', metadata,
                   sql.Column('game_id', sql.VARCHAR(12)),
                   sql.Column('plays', sql.VARCHAR(128)),
                   sql.Column('player_1', sql.VARCHAR(9)),
                   sql.Column('player_2', sql.VARCHAR(9)),
                   sql.Column('player_3', sql.VARCHAR(9)))
-        metadata_raw.create_all()
+        metadata.create_all()
 
 
-def create_table_teams():
+def create_table_teams(metadata):
     sql.Table('teams', metadata,
               sql.Column('team_id', sql.VARCHAR(3), primary_key=True, nullable=False),
               sql.Column('short_name', sql.VARCHAR(32)),

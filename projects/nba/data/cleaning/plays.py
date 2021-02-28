@@ -1,6 +1,6 @@
 # CLEAN RAW PLAYS DATA
-from modelling.projects.nba import re, np, Process, Manager
-from modelling.projects.nba.utils import *
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
 
 
 # LOADING AND TIDYING OF RAW PLAYS TEXT
@@ -1008,7 +1008,9 @@ def write_all_plays(series):
 
 
 if __name__ == '__main__':
-    create_table_plays()
+    engine, metadata, connection = get_connection(database)
+    engine_raw, metadata_raw, connection_raw = get_connection(database_raw)
+    create_table_plays(engine, metadata)
 
     # create manager for sharing data across processes
     manager = Manager()

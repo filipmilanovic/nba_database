@@ -1,11 +1,13 @@
 # CONVERTING TEAMS TO DATAFRAME
-from modelling.projects.nba import *
+from modelling.projects.nba.utils import *
 
 if __name__ == '__main__':
+    engine, metadata, connection = get_connection(database)
+
+    create_table_teams(metadata)
+
     # Get teams from class objects
     teams = pd.DataFrame.from_records([team.to_dict() for team in Team.instances])
-
-    create_table_teams()
 
     # write to SQL and CSV
     write_data(df=teams,

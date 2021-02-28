@@ -1,7 +1,7 @@
 # SCRAPING PLAY BY PLAY DATA
-from modelling.projects.nba import *  # import all project specific utils
-from modelling.projects.nba.utils import *
-from modelling.projects.nba.data.scraping import *
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
+from modelling.projects.nba.data import *  # import data specific packages
 
 
 # generate list of 5 starters
@@ -138,7 +138,8 @@ def write_all_lineups():
 
 
 if __name__ == '__main__':
-    create_table_games_lineups()
+    engine, metadata, connection = get_connection(database)
+    create_table_games_lineups(engine, metadata)
 
     # column names for plays_raw table
     columns = ['game_id', 'team_id', 'player_id', 'role']

@@ -1,7 +1,7 @@
 # SCRAPING PLAYER DATA
-from modelling.projects.nba import *  # import all project specific utils
-from modelling.projects.nba.utils import *
-from modelling.projects.nba.data.scraping import *
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
+from modelling.projects.nba.data import *  # import data specific packages
 
 
 def get_player_name(html):
@@ -185,7 +185,8 @@ def write_all_players():
 
 
 if __name__ == '__main__':
-    create_table_players()
+    engine, metadata, connection = get_connection(database)
+    create_table_players(engine, metadata)
 
     columns = ['player_id', 'player_name', 'dob', 'height', 'weight', 'hand', 'position',
                'draft_year', 'draft_pick', 'rookie_year']

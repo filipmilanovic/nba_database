@@ -1,7 +1,7 @@
 # SCRAPING GAME DATA
-from modelling.projects.nba import re, threading, concurrent
-from modelling.projects.nba.utils import *  # import all project specific utils
-from modelling.projects.nba.data.scraping import *
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
+from modelling.projects.nba.data import *  # import data specific packages
 
 
 # convert to standardised date format
@@ -159,7 +159,8 @@ def write_all_games_data():
 
 
 if __name__ == '__main__':
-    create_table_games()
+    engine, metadata, connection = get_connection(database)
+    create_table_games(engine, metadata)
 
     # column names for games table
     columns = ['game_id', 'game_date', 'home_team', 'home_score', 'away_team', 'away_score', 'season', 'is_playoffs']

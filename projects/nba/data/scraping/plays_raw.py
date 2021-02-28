@@ -1,7 +1,7 @@
 # SCRAPING PLAY BY PLAY DATA
-from modelling.projects.nba import *  # import all project specific utils
-from modelling.projects.nba.utils import *
-from modelling.projects.nba.data.scraping import *
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
+from modelling.projects.nba.data import *  # import data specific packages
 
 
 # get the nth player_id from a play
@@ -111,7 +111,9 @@ def write_all_raw_plays():
 
 
 if __name__ == '__main__':
-    create_table_plays_raw()
+    engine, metadata, connection = get_connection(database)
+    engine_raw, metadata_raw, connection_raw = get_connection(database_raw)
+    create_table_plays_raw(engine_raw, metadata_raw)
 
     # column names for plays_raw table
     columns = ['plays', 'player_1', 'player_2', 'player_3', 'game_id']

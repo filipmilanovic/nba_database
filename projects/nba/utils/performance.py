@@ -1,8 +1,6 @@
 from modelling.projects import *  # high level packages
-from modelling.projects.nba.utils.connections import sql
+from modelling.projects.nba.utils.connections import get_connection
 from modelling.projects.nba.utils.environment import *
-from modelling.projects.nba.utils.colours import *
-from sqlalchemy.exc import OperationalError
 import inspect
 
 # write performance of functions to DB
@@ -10,15 +8,7 @@ PERFORMANCE_TEST = False
 
 if PERFORMANCE_TEST:
     # create connection to performance schema
-    try:
-        engine_perf = sql.create_engine('mysql://' + USER + ':' + PASSWORD
-                                        + '@' + HOST + '/' + DATABASE_PERF + '?charset=utf8mb4')
-        connection_perf = engine_perf.connect()
-        metadata_perf = sql.MetaData(engine_perf)
-        print(Colour.green + 'Established SQL connection to performance schema' + Colour.end)
-    except sql.exc.OperationalError:
-        print(Colour.red + "Couldn't establish SQL connection" + Colour.end)
-
+    engine_perf, metadata_perf, connection_perf = get_connection(database_perf)
 
 performance = []
 

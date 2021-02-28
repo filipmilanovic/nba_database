@@ -1,7 +1,7 @@
 # SCRAPING ODDS DATA
-from modelling.projects.nba import *  # import all project specific utils
-from modelling.projects.nba.utils import *
-from modelling.projects.nba.data.scraping import *
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
+from modelling.projects.nba.data import *  # import data specific packages
 
 
 def get_max_page_number():
@@ -219,7 +219,8 @@ def get_season_data(season):
 
 
 if __name__ == '__main__':
-    create_table_odds()
+    engine, metadata, connection = get_connection(database)
+    create_table_odds(engine, metadata)
 
     columns = ['game_id', 'home_odds', 'away_odds']
 
