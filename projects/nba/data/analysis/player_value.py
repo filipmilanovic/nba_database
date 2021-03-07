@@ -24,14 +24,14 @@ def get_team_scores(current_player_id, player_list, index):
     """ input the latest player scores for each team for possession for the given index """
     output = [sum([latest_iteration[player]['value'] for player in player_list[i].split('|')
                    if player != current_player_id])
-              for i in index]
+              for i in index if possession_list[i] == 1]
 
     return output
 
 
 def get_player_score(list_1, list_2, list_3):
     """ calculate the score for the current player """
-    output = sum([x - y + z for x, y, z in zip(list_1, list_2, list_3)])
+    output = sum(list_1) - sum(list_2) + sum(list_3)
 
     return output
 
@@ -57,8 +57,9 @@ if __name__ == '__main__':
         current_iteration = {}
         current_deltas = []
 
-        # get index of all possessions and scoring plays
-        possession_index = (season_plays['possession'] == 1) | (season_plays['event'] == 'FT Make')
+        # get index of all possessions and scoring plays, but exclude period end
+        possession_index = ((season_plays['possession'] == 1) | (season_plays['event'] == 'FT Make')) &\
+                           (season_plays['event'] != 'Period End')
 
         # convert all series' to lists
         players_list = season_plays.loc[possession_index, 'players'].tolist()
@@ -94,13 +95,13 @@ if __name__ == '__main__':
             # find number of possessions player was on for and calculate average player possession value
             player_possessions = sum([possession_list[i] for i in player_index + opp_player_index])
 
+            # divide calculation by 5, as there are 5 players on the court
             try:
-                player_possession_value = round((player_score - player_opp_score) / player_possessions, 5)
+                player_possession_value = round(((player_score-player_opp_score)/player_possessions)/5, 5)
             except ZeroDivisionError:
-                player_possession_value = player_score - player_opp_score
+                player_possession_value = round((player_score - player_opp_score)/5, 5)
 
             # store value in current dict
-            # WOULD BE GOOD TO ADD OFFENSIVE/DEFENSIVE VALUE
             current_iteration[player_id] = {'value': player_possession_value, 'possessions': player_possessions}
 
             # find delta from previous iteration and store in list

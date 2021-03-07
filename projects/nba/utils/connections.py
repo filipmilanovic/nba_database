@@ -8,8 +8,7 @@ from sqlalchemy.exc import ProgrammingError
 # Set up MySQL Connections
 def get_connection(db):
     try:
-        engine = sql.create_engine('mysql://' + user + ':' + password
-                                   + '@' + host + '/' + db + '?charset=utf8mb4')
+        engine = sql.create_engine(f'mysql://{user}:{password}@{host}/{db}?charset=utf8mb4')
         connection = engine.connect()
         metadata = sql.MetaData(engine)
         print(Colour.green + f'Established SQL connection to {db} schema' + Colour.end)

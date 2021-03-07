@@ -67,7 +67,7 @@ occur. (~45 minutes)
 
 ### Analysis & Modelling
 #### Potential analyses
-* Overall 'value added' statistic by player (e.g. +/- by player accounting for other players on the court)
+* ~~Overall 'value added' statistic by player (e.g. +/- by player accounting for other players on the court)~~
 * Predicting game probabilities (e.g. based on record, home/away, fatigue, missing players)
 * Interesting stats/trends (e.g. likelihood of shooting/making next shot after shot/make; importance index
   by game)
@@ -77,6 +77,7 @@ occur. (~45 minutes)
 * Write cleaning.game_logs.py script to create a nicer dataset for predictive
   analysis
 * Add ejections to [cleaning.plays.py](projects/nba/data/cleaning/plays.py)
+* Access [NBA stats](stats.nba.com) for shot information (location, type, defenders)
 * ~~Update [cleaning.plays.py](projects/nba/data/cleaning/plays.py) to include possession indicator and which players
   are on the court~~
 * ~~Add automated performance testing~~
@@ -84,8 +85,11 @@ occur. (~45 minutes)
 * Set up central control to build dataset from one script
 * Move scraping to use nba.com - this is likely to be slower, but should be more accurate, so I can reduce manual fixes,
 and is probably also a bit more 'official'
+* Set up automated daily ingestion of data
+* Keep chromedriver up to date automatically, or move to purely using the requests library
 
 ### Bug Log
+* ~~2020 playoffs not correctly flagged in nba.games~~
 * Occasionally Basketball Reference has a shot that doesn't show up, or a make that is incorrectly counted as a 2/3
 * Missing rebounds when a shot doesn't show up in Basketball Reference, or there is a substitution 'after' a missed FT,
   so the shooter is not picked up
