@@ -1,7 +1,7 @@
 # GET PLAYER_IDS ON THE COURT FOR EACH PLAY
-from modelling.projects.nba import *  # import all project specific utils
-from modelling.projects.nba.utils import *
-from modelling.projects.nba.data.scraping import *  # importing scraping for certain exceptions
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
+from modelling.projects.nba.data import *  # import data specific packages
 
 
 def get_box_key(team_id, period):
@@ -485,9 +485,12 @@ def write_all_plays_players(series):
         if not q.empty():
             write_season_plays_players(q)
 
+        print(f'Completed season {season}')
+
 
 if __name__ == '__main__':
-    create_table_plays_players()
+    engine, metadata, connection = get_connection(database)
+    create_table_plays_players(engine, metadata)
 
     # create manager for sharing data across processes
     manager = Manager()

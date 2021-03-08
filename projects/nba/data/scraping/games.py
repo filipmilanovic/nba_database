@@ -1,7 +1,7 @@
 # SCRAPING GAME DATA
-from modelling.projects.nba import re, threading, concurrent
-from modelling.projects.nba.utils import *  # import all project specific utils
-from modelling.projects.nba.data.scraping import *
+from modelling.projects.nba import *  # import broadly used python packages
+from modelling.projects.nba.utils import *  # import user defined utilities
+from modelling.projects.nba.data import *  # import data specific packages
 
 
 # convert to standardised date format
@@ -102,6 +102,10 @@ def scrape_season_games(driver, months, season):
         except IndexError:
             pass
 
+        # manually set playoff date for 2020 since it is not given by basketball reference
+        if season == 2020:
+            playoff_date = '2020-08-15'
+
         # get all data into monthly data_frame
         monthly['game_id'] = get_game_id(rows)
         monthly['game_date'] = get_game_date(rows)
@@ -152,14 +156,15 @@ def write_season_data(iteration):
 
 
 def write_all_games_data():
-    iterations = range(len(season_range))
+    iteration = list(range(len(season_range)))
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        executor.map(write_season_data, iterations)
+        executor.map(write_season_data, iteration)
         executor.shutdown()
 
 
 if __name__ == '__main__':
-    create_table_games()
+    engine, metadata, connection = get_connection(database)
+    create_table_games(engine, metadata)
 
     # column names for games table
     columns = ['game_id', 'game_date', 'home_team', 'home_score', 'away_team', 'away_score', 'season', 'is_playoffs']

@@ -6,7 +6,7 @@ from sqlalchemy.exc import OperationalError, NoSuchTableError
 
 
 # Useful functions
-def progress(iteration, iterations, iteration_name, lapsed, sql_status):
+def progress(iteration, iterations, iteration_name, lapsed, sql_status=''):
     # rewrite on same line
     sys.stdout.write('\r')
     sys.stdout.write("[%-20s] %d%% %s %s %s" % ('='*round((iteration+1)/(iterations/20)),
