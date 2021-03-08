@@ -1,5 +1,4 @@
-# Modelling
-## NBA Package
+# NBA Database
 ### Set-up Instructions
 #### Terminal
 If running virtual environment (venv), initiate with
@@ -8,9 +7,9 @@ If running virtual environment (venv), initiate with
 
 then check that Python Interpreter is located at  ~\ProjectName\venv\Scripts\python.exe
 
-Next change the working directory to modelling folder
+Next change the working directory to nba_database folder
 
-`cd modelling`
+`cd nba_database`
 
 then install all requirements
 
