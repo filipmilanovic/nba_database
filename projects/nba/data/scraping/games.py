@@ -85,7 +85,7 @@ def scrape_season_games(driver, months, season):
         # get schedule table
         schedule = driver.find_element_by_id('schedule')
 
-        # get html text of schedule table, and return all rowz
+        # get html text of schedule table, and return all rows
         soup = BeautifulSoup(schedule.get_attribute('innerHTML'), 'html.parser')
         table = soup.findChild('tbody').findChildren('tr')
 
