@@ -10,4 +10,5 @@
 /**/output/*.csv
 
 # environment variables
+venv/
 /**/environment.py

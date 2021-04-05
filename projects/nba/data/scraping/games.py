@@ -8,7 +8,6 @@ from modelling.projects.nba.data import *  # import data specific packages
 def convert_date(x):
     output = dt.strptime(x, "%a, %b %d, %Y").strftime("%Y-%m-%d")
 
-    log_performance()
     return output
 
 
@@ -16,15 +15,12 @@ def convert_date(x):
 def get_game_id(rows):
     output = [x.findChild('th').get('csk') for x in rows]
 
-    log_performance()
     return output
 
 
 # get date from row header and convert to standardised date
 def get_game_date(rows):
     output = [convert_date(x.findChild('th').findChild('a').text) for x in rows]
-
-    log_performance()
     return output
 
 
@@ -32,8 +28,6 @@ def get_game_date(rows):
 def get_home_team(rows):
     output = [re.search(r'([A-Z]+)\.', x[i].get('csk')).group(1) for x in rows for i in range(len(rows[0]))
               if x[i].get('data-stat') == 'home_team_name']
-
-    log_performance()
     return output
 
 
@@ -41,8 +35,6 @@ def get_home_team(rows):
 def get_home_score(rows):
     output = [x[i].text for x in rows for i in range(len(rows[0]))
               if x[i].get('data-stat') == 'home_pts']
-
-    log_performance()
     return output
 
 
@@ -50,8 +42,6 @@ def get_home_score(rows):
 def get_away_team(rows):
     output = [re.search(r'([A-Z]+)\.', x[i].get('csk')).group(1) for x in rows for i in range(len(rows[0]))
               if x[i].get('data-stat') == 'visitor_team_name']
-
-    log_performance()
     return output
 
 
@@ -59,12 +49,10 @@ def get_away_team(rows):
 def get_away_score(rows):
     output = [x[i].text for x in rows for i in range(len(rows[0]))
               if x[i].get('data-stat') == 'visitor_pts']
-
-    log_performance()
     return output
 
 
-def scrape_season_games(driver, months, season):
+def scrape_season_games(session, months, season):
     # initialise season dataframe
     output = pd.DataFrame(columns=columns)
 
@@ -79,20 +67,21 @@ def scrape_season_games(driver, months, season):
         month = x.lower().replace(' ', '-')
 
         # jump to month/season combination of games
-        driver.get(f"https://www.basketball-reference.com/leagues/NBA_{season}_games-{month}.html")
-        time.sleep(0.5)
+        month_url = f"https://www.basketball-reference.com/leagues/NBA_{season}_games-{month}.html"
+
+        page = session.get(month_url)
+
+        # get content of page request
+        soup = BeautifulSoup(page.content, 'lxml')
 
         # get schedule table
-        schedule = driver.find_element_by_id('schedule')
+        schedule = soup.find('table', {'id': 'schedule'})
 
         # get html text of schedule table, and return all rows
-        soup = BeautifulSoup(schedule.get_attribute('innerHTML'), 'html.parser')
-        table = soup.findChild('tbody').findChildren('tr')
+        table = schedule.findChild('tbody').findChildren('tr')
 
-        # get whole rows
-        rows = [x for x in table if x.get('data-row') is not None and x.get('class') is None]
+        rows = [x for x in table if x.get('class') is None]
 
-        # get row cells
         row_cells = [x.findChildren('td') for x in rows]
 
         # if playoffs happen in the month, update the playoff_date
@@ -118,26 +107,40 @@ def scrape_season_games(driver, months, season):
 
         output = output.append(monthly)
 
-        log_performance()
+    return output
+
+
+# open session for each thread
+def get_session():
+    if not hasattr(thread_local, "session"):
+        thread_local.session = r.session()
+    else:
+        pass
+    return thread_local.session
+
+
+def get_months(session, season):
+    url = f"https://www.basketball-reference.com/leagues/NBA_{season}_games.html"
+    page = session.get(url)
+    soup = BeautifulSoup(page.content, 'lxml')
+    month_elements = soup.find('div', {'class': 'filter'})
+    months = month_elements.findAll('a')
+    output = [x.text.strip() for x in months]
+
     return output
 
 
 def write_season_data(iteration):
-    driver = webdriver.Chrome(executable_path=str(ROOT_DIR) + "/utils/chromedriver.exe",
-                              options=options)
+    """ write game data for the season """
+    # set season and session for thread
+    season = season_range[iteration]
+    session = get_session()
 
-    # go to base game schedule for the season
-    driver.get(f"https://www.basketball-reference.com/leagues/NBA_{season_range[iteration]}_games.html")
-
-    # wait for page to load
-    time.sleep(0.5)
-
-    # get all the months for the season
-    month_elements = driver.find_elements_by_xpath("//*[@class='filter']/div")
-    months = [x.text for x in month_elements]
+    # get all the months the season ran in
+    months = get_months(session, season)
 
     # scrape the season data for all found months
-    yearly = scrape_season_games(driver, months, season_range[iteration])
+    yearly = scrape_season_games(session, months, season)
 
     status = write_data(df=yearly,
                         name='games',
@@ -152,13 +155,11 @@ def write_season_data(iteration):
              lapsed=time_lapsed(),
              sql_status=status['sql'])
 
-    driver.quit()
-
 
 def write_all_games_data():
-    iteration = list(range(len(season_range)))
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        executor.map(write_season_data, iteration)
+    iterations = list(range(len(season_range)))
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        executor.map(write_season_data, iterations)
         executor.shutdown()
 
 
