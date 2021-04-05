@@ -5,9 +5,10 @@
 .idea/
 
 # files
-/**/test.py
+/data/test.py
 /**/debug.log
 /**/output/*.csv
 
 # environment variables
+venv/
 /**/environment.py
