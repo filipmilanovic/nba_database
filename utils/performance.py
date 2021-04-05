@@ -1,6 +1,6 @@
-from modelling import *  # high level packages
-from modelling.utils.connections import get_connection
-from modelling.utils.environment import *
+from utils.connections import get_connection
+from utils.environment import *
+from utils.functions import pd, time
 import inspect
 
 # write performance of functions to DB

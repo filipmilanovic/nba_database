@@ -1,13 +1,11 @@
 # SCRAPING PLAY BY PLAY DATA
-from modelling.utils import *  # import user defined utilities
-from modelling.data import *  # import data specific packages
+from data import *
 
 
 # generate list of 5 starters
 def get_starters_roles():
     output = ['Starter'] * 5
 
-    log_performance()
     return output
 
 
@@ -17,7 +15,6 @@ def get_bench_roles(rows):
     bench = [i.findChild('th').get('data-append-csv') for i in players if i.findAll('td', {'data-stat': 'mp'})]
     output = ['Bench'] * len(bench)
 
-    log_performance()
     return output
 
 
@@ -27,7 +24,6 @@ def get_dnp_roles(rows):
     dnp = [i.findChild('th').get('data-append-csv') for i in players if i.findAll('td', {'data-stat': 'reason'})]
     output = ['DNP'] * len(dnp)
 
-    log_performance()
     return output
 
 
@@ -56,7 +52,6 @@ def get_team_roles(html, team_id, game_id):
 
     output.columns = columns
 
-    log_performance()
     return output
 
 
@@ -68,7 +63,6 @@ def get_page_content(game_id, session):
     page = session.get(url)
     output = BeautifulSoup(page.content, 'lxml')
 
-    log_performance()
     return output
 
 
@@ -76,7 +70,6 @@ def get_page_content(game_id, session):
 def get_teams(game_id):
     output = games.loc[games['game_id'] == game_id, ['home_team', 'away_team']]
 
-    log_performance()
     return output
 
 
@@ -125,7 +118,6 @@ def write_lineup(iteration):
              lapsed=time_lapsed(),
              sql_status=status['sql'])
 
-    log_performance()
     return output
 
 
@@ -173,5 +165,3 @@ if __name__ == '__main__':
 
     print(Colour.green + 'Lineup Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
-
-    write_performance()

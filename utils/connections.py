@@ -1,7 +1,7 @@
 # SETTING UP SQL CONNECTIONS
 import sqlalchemy as sql
-from modelling.utils.colours import *
-from modelling.utils.environment import *
+from utils.colours import *
+from utils.environment import *
 from sqlalchemy.exc import ProgrammingError
 
 

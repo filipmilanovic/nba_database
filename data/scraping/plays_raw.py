@@ -1,6 +1,5 @@
 # SCRAPING PLAY BY PLAY DATA
-from modelling.utils import *  # import user defined utilities
-from modelling.data import *  # import data specific packages
+from data import *
 
 
 # get the nth player_id from a play
@@ -18,7 +17,6 @@ def get_player_id(x, n):
     except (IndexError, AttributeError):
         output = None
 
-    log_performance()
     return output
 
 
@@ -39,7 +37,6 @@ def get_page_content(game_id, session):
     page = session.get(url)
     output = BeautifulSoup(page.content, 'lxml')
 
-    log_performance()
     return output
 
 
@@ -47,7 +44,6 @@ def get_page_content(game_id, session):
 def get_table_content(soup):
     output = soup.find('table', {'id': 'pbp'})
 
-    log_performance()
     return output
 
 
@@ -66,7 +62,6 @@ def get_raw_plays(soup):
 
     output = list(zip(plays, player_1, player_2, player_3))
 
-    log_performance()
     return output
 
 
@@ -143,5 +138,3 @@ if __name__ == '__main__':
 
     print(Colour.green + 'Game Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
-
-    write_performance()

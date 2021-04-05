@@ -1,6 +1,5 @@
 # SCRAPING GAME DATA
-from modelling.utils import *
-from modelling.data import *
+from data import *
 
 
 # convert to standardised date format
@@ -119,9 +118,13 @@ def get_session():
 
 
 def get_months(session, season):
+    """ get months the season was played in """
+    # go to url and get content
     url = f"https://www.basketball-reference.com/leagues/NBA_{season}_games.html"
     page = session.get(url)
     soup = BeautifulSoup(page.content, 'lxml')
+
+    # find all month buttons on page
     month_elements = soup.find('div', {'class': 'filter'})
     months = month_elements.findAll('a')
     output = [x.text.strip() for x in months]

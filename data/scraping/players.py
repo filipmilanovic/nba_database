@@ -1,19 +1,16 @@
 # SCRAPING PLAYER DATA
-from modelling.utils import *  # import user defined utilities
-from modelling.data import *  # import data specific packages
+from data import *
 
 
 def get_player_name(html):
     output = html.find('h1', {'itemprop': 'name'}).text.replace('\n', '')
 
-    log_performance()
     return output
 
 
 def get_player_dob(html):
     output = html.find('span', {'itemprop': 'birthDate'}).get('data-birth')
 
-    log_performance()
     return output
 
 
@@ -22,7 +19,6 @@ def get_player_height(html):
     inches = int(left(height, 1))*12 + int(re.search(r'-(\d+)', height).group(1))
     output = int(inches*2.54)
 
-    log_performance()
     return output
 
 
@@ -31,7 +27,6 @@ def get_player_weight(html):
     pounds = int(re.search(r'(\d+)lb', weight).group(1))
     output = int(pounds/2.205)
 
-    log_performance()
     return output
 
 
@@ -39,7 +34,6 @@ def get_player_hand(html):
     # the line with position contains players shooting hand
     output = html.find('strong', text=re.compile(r'Shoots:')).next_sibling.strip()
 
-    log_performance()
     return output
 
 
@@ -47,7 +41,6 @@ def get_player_position(html):
     raw = html.find('strong', text=re.compile(r'Position:')).next_sibling
     output = positions[raw.split()[0]]
 
-    log_performance()
     return output
 
 
@@ -58,7 +51,6 @@ def get_drafted_year(html):
     except AttributeError:
         output = None
 
-    log_performance()
     return output
 
 
@@ -69,7 +61,6 @@ def get_draft_pick(html):
     except AttributeError:
         output = None
 
-    log_performance()
     return output
 
 
@@ -89,7 +80,6 @@ def get_rookie_year(html):
     except AttributeError:
         output = None
 
-    log_performance()
     return output
 
 
@@ -99,7 +89,6 @@ def get_player_url_list(series):
 
     print(Colour.green + 'Generated list of URLs' + Colour.end)
 
-    log_performance()
     return output
 
 
@@ -116,14 +105,12 @@ def get_page_content(url, session):
     page = session.get(url)
     output = BeautifulSoup(page.content, 'lxml')
 
-    log_performance()
     return output
 
 
 def get_player_info(soup):
     output = soup.find('div', {'itemtype': 'https://schema.org/Person'})
 
-    log_performance()
     return output
 
 
@@ -225,5 +212,3 @@ if __name__ == '__main__':
 
     print(Colour.green + 'Player Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
-
-    write_performance()

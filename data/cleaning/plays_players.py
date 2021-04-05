@@ -1,6 +1,5 @@
 # GET PLAYER_IDS ON THE COURT FOR EACH PLAY
-from modelling.utils import *  # import user defined utilities
-from modelling.data import *  # import data specific packages
+from data import *
 
 
 def get_box_key(team_id, period):
