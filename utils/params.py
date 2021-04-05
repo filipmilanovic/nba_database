@@ -1,5 +1,5 @@
 # SETTING PARAMETERS FOR RUNNING OF PROJECT
-from modelling import dt
+from datetime import datetime as dt
 
 # Dates for table games
 start_season_games = 2001

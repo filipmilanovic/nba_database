@@ -1,8 +1,12 @@
 # DEFINING FUNCTIONS FOR USE IN PROJECT
-from modelling import pd, sys, time, start_time
-from modelling.utils.connections import sql
-from modelling.utils.colours import *
+import pandas as pd
+import sys
+import time
+from utils.connections import sql
+from utils.colours import *
 from sqlalchemy.exc import OperationalError, NoSuchTableError
+
+start_time = time.time()
 
 
 # Useful functions

@@ -1,5 +1,5 @@
 # CLEAN RAW PLAYS DATA
-from modelling.utils import *  # import user defined utilities
+from data import *
 
 
 # LOADING AND TIDYING OF RAW PLAYS TEXT

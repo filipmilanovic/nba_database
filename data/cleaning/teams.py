@@ -1,5 +1,5 @@
 # CONVERTING TEAMS TO DATAFRAME
-from modelling.utils import *
+from utils import *
 
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(database)
