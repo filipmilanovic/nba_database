@@ -28,8 +28,8 @@ def season_data(iteration):
 
     write_season_data(output, iteration)
 
-    # sleep to avoid rate limiting on requests
-    time.sleep(1)
+    # sleep to avoid hitting rate limit on requests
+    time.sleep(2)
 
 
 def generate_logs_json(season, is_playoffs):
@@ -45,7 +45,7 @@ def get_request_parameters(season, is_playoffs):
               'Direction': 'DESC',
               'LeagueID': '00',
               'PlayerOrTeam': 'T',
-              'Season': season,
+              'Season': season - 1,
               'SeasonType': season_type[is_playoffs],
               'Sorter': 'DATE'}
 
@@ -58,8 +58,10 @@ def get_logs(json):
     logs_columns = logs['headers']
     logs_rows = logs['rowSet']
 
-    output = pd.DataFrame.from_dict(data=logs_rows)
-    output.columns = logs_columns
+    logs_df = pd.DataFrame.from_dict(data=logs_rows)
+    logs_df.columns = logs_columns
+
+    output = check_db_duplicates(logs_df, 'GAME_ID', 'games', 'game_id', metadata, engine, connection)
 
     return output
 
@@ -73,7 +75,7 @@ def get_games(df, season, is_playoffs):
     output[['game_id', 'game_date']] = get_game_id_date(df)
     output[['home_team_id', 'home_score']] = get_team_data(df=df, is_home=True)
     output[['away_team_id', 'away_score']] = get_team_data(df=df, is_home=False)
-    output['season'] = [int(season) + 1] * len(output)
+    output['season'] = [int(season)] * len(output)
     output['is_playoffs'] = [is_playoffs] * len(output)
 
     return output

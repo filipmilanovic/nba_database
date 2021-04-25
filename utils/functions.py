@@ -1,10 +1,11 @@
 # DEFINING FUNCTIONS FOR USE IN PROJECT
 import pandas as pd
+from sqlalchemy.exc import OperationalError, NoSuchTableError
 import sys
 import time
-from utils.connections import sql
 from utils.colours import *
-from sqlalchemy.exc import OperationalError, NoSuchTableError
+from utils.connections import sql, get_column_query, get_delete_query
+from utils.params import REBUILD_DB
 
 start_time = time.time()
 
@@ -59,6 +60,24 @@ def write_data(df,
     status = {"sql": status_sql}
 
     return status
+
+
+def check_db_duplicates(df, df_key, db_table, db_key, metadata, engine, connection):
+    # get rows currently in data frame
+    df_index = df[df_key]
+
+    if REBUILD_DB:
+        # clear rows in DB where data already exists
+        selectable = get_delete_query(metadata, engine, db_table, db_key, df_index)
+        connection.execute(selectable)
+        output = df
+    else:
+        # skip rows where data already exists in DB
+        selectable = get_column_query(metadata, engine, db_table, db_key)
+        skip_index = pd.read_sql(sql=selectable, con=connection)[db_key]
+        output = df[~df_index.isin(skip_index)].reset_index(drop=True)
+
+    return output
 
 
 #  Data cleaning functions

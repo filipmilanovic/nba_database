@@ -1,4 +1,4 @@
-from utils.functions import get_parameters_string
+from utils.functions import time, get_parameters_string
 from utils.headers import nba_headers
 import requests as r
 

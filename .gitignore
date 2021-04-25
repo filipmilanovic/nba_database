@@ -5,7 +5,7 @@
 .idea/
 
 # files
-/data/test.py
+/**/test.py
 /**/debug.log
 /**/output/*.csv
 
