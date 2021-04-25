@@ -123,3 +123,11 @@ def swap_rows(df, i, j, direction):
         df.loc[j] = temp
 
     return df, j
+
+
+def get_parameters_string(param_dict):
+    """ take dictionary of parameters and convert to string to add to URL """
+    param_list = [f'{i}={param_dict[i]}' for i in list(param_dict.keys())]
+    output = '&'.join(param_list).replace(' ', '+')
+
+    return output

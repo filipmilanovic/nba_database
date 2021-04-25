@@ -1,4 +1,7 @@
 # DEFINE USEFUL DICTIONARIES
+season_type = {0: 'Regular Season',
+               1: 'Playoffs'}
+
 positions = {'Center': 'C',
              'Power': 'PF',
              'Small': 'SF',

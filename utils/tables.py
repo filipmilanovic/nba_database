@@ -8,9 +8,9 @@ def create_table_games(engine, metadata):
         sql.Table('games', metadata,
                   sql.Column('game_id', sql.VARCHAR(12), primary_key=True, nullable=False),
                   sql.Column('game_date', sql.DATE),
-                  sql.Column('home_team', sql.VARCHAR(3)),
+                  sql.Column('home_team_id', sql.INT),
                   sql.Column('home_score', sql.SMALLINT),
-                  sql.Column('away_team', sql.VARCHAR(3)),
+                  sql.Column('away_team_id', sql.INT),
                   sql.Column('away_score', sql.SMALLINT),
                   sql.Column('season', sql.SMALLINT),
                   sql.Column('is_playoffs', sql.SMALLINT))
