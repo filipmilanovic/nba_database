@@ -1,4 +1,4 @@
-from utils.functions import time, get_parameters_string
+from utils.functions import get_parameters_string
 from utils.headers import nba_headers
 import requests as r
 
@@ -9,7 +9,8 @@ class NBAEndpoint:
     def __init__(self,
                  endpoint: str):
         self.endpoint = endpoint
-        self.headers = nba_headers
+        self.session = r.session()
+        self.session.headers.update(nba_headers)
         self.response = None
 
     def send_request(self,
@@ -18,4 +19,7 @@ class NBAEndpoint:
         parameters_string = get_parameters_string(parameters)
         url = f'https://stats.nba.com/stats/{self.endpoint}/?{parameters_string}'
 
-        self.response = r.get(url, headers=self.headers).json()
+        self.response = self.session.get(url).json()
+
+    def close_session(self):
+        self.session.close()

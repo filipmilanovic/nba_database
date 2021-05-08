@@ -12,6 +12,8 @@ def all_game_data():
 
 def season_data(iteration):
     """ get data for the season """
+    iteration_start_time = time.time()
+
     season = season_range[iteration]
 
     # get regular season games
@@ -29,7 +31,9 @@ def season_data(iteration):
     write_season_data(output, iteration)
 
     # sleep to avoid hitting rate limit on requests
-    time.sleep(2)
+    sleep_time = get_sleep_time(iteration_start_time, 1)
+
+    time.sleep(sleep_time)
 
 
 def generate_logs_json(season, is_playoffs):
@@ -57,7 +61,7 @@ def get_logs(json):
     logs = json['resultSets'][0]
     logs_columns = logs['headers']
     logs_rows = logs['rowSet']
-
+    
     logs_df = pd.DataFrame.from_dict(data=logs_rows)
     logs_df.columns = logs_columns
 

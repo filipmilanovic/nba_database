@@ -90,11 +90,13 @@ def create_table_plays_raw(engine, metadata):
         metadata.create_all()
 
 
-def create_table_teams(metadata):
-    sql.Table('teams', metadata,
-              sql.Column('team_id', sql.VARCHAR(3), primary_key=True, nullable=False),
-              sql.Column('short_name', sql.VARCHAR(32)),
-              sql.Column('full_name', sql.VARCHAR(33)),
-              sql.Column('coordinates', sql.VARCHAR(32)))
-    metadata.drop_all()
-    metadata.create_all()
+def create_table_teams(engine, metadata):
+    if not engine.dialect.has_table(engine, 'teams'):
+        sql.Table('teams', metadata,
+                  sql.Column('team_season_id', sql.BIGINT, primary_key=True, nullable=False),
+                  sql.Column('team_id', sql.INT),
+                  sql.Column('team_name', sql.VARCHAR(33)),
+                  sql.Column('team_short_name', sql.VARCHAR(3)),
+                  sql.Column('season', sql.INT),
+                  sql.Column('arena', sql.VARCHAR(33)))
+        metadata.create_all()

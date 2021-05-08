@@ -9,4 +9,3 @@ from utils.headers import *
 from utils.params import *
 from utils.performance import *
 from utils.tables import *
-from utils.teams import *

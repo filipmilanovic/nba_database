@@ -144,9 +144,18 @@ def swap_rows(df, i, j, direction):
     return df, j
 
 
-def get_parameters_string(param_dict):
+def get_parameters_string(param_dict: dict):
     """ take dictionary of parameters and convert to string to add to URL """
     param_list = [f'{i}={param_dict[i]}' for i in list(param_dict.keys())]
     output = '&'.join(param_list).replace(' ', '+')
+
+    return output
+
+
+def get_sleep_time(iteration_start_time, target_duration):
+    """ get duration of an iteration, then wait until target time reached """
+    target_time = iteration_start_time + target_duration
+    sleep_time = target_time - time.time()
+    output = max(sleep_time, 0)
 
     return output
