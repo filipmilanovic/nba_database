@@ -1,21 +1,19 @@
 # NBA Database
-### Set-up Instructions
-#### Terminal
-If running virtual environment (venv), initiate with
+### Requirements
+- python3.8
+- pip3
+- venv
+- install libraries inside the virtual environment
 
-`venv\Scripts\activate`
-
-then check that Python Interpreter is located at  ~\ProjectName\venv\Scripts\python.exe
-
-Next change the working directory to nba_database folder
-
-`cd nba_database`
-
-then install all requirements
-
-`pip install -r requirements.txt`
+`pip3 install -r requirements.txt`
 
 The project should now be set up and ready to run and interact with GitHub
+
+### Set-up Instructions
+- Start Docker on your machine
+- In the terminal, run `docker compose up --build`, and wait for the MySQL database to be built
+- The database should now be available at [localhost:3308](http://localhost:3308), with PHPMyAdmin available at
+[localhost:8080](http://localhost:8080)
 
 #### Database Connection
 By default, this project has been set up to work with MySQL databases.  All the SQL connections are defined at 
@@ -77,7 +75,7 @@ occur. (~45 minutes)
   
 * Add ejections to [cleaning.plays.py](data/cleaning/plays.py)
   
-* Access [NBA stats](stats.nba.com) for shot information (location, type, defenders)
+* Access [NBA stats](http://stats.nba.com) for shot information (location, type, defenders)
   
 * ~~Update [cleaning.plays.py](data/cleaning/plays.py) to include possession indicator and which players
   are on the court~~
@@ -88,7 +86,7 @@ occur. (~45 minutes)
   
 * Set up central control to build dataset from one script
   
-* Move scraping to use [nba.com](nba.com) - this is likely to be slower, but should be more accurate, so I manual fixes
+* Move scraping to use [nba.com](http://nba.com) - this is likely to be slower, but should be more accurate, so I manual fixes
 can be reduced and is probably also a bit more 'official'
 
 * Set up automated daily ingestion of data
@@ -103,7 +101,4 @@ can be reduced and is probably also a bit more 'official'
 * Set up UI for exploration of data
 
 ### Bug Log
-* ~~2020 playoffs not correctly flagged in nba.games~~
-* Occasionally Basketball Reference has a shot that doesn't show up, or a make that is incorrectly counted as a 2/3
-* Missing rebounds when a shot doesn't show up in Basketball Reference, or there is a substitution 'after' a missed FT,
-  so the shooter is not picked up
+
