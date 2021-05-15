@@ -7,11 +7,14 @@ def create_table_games(engine, metadata):
     if not engine.dialect.has_table(engine, 'games'):
         sql.Table('games', metadata,
                   sql.Column('game_id', sql.VARCHAR(12), primary_key=True, nullable=False),
-                  sql.Column('game_date', sql.DATE),
+                  sql.Column('game_time', sql.DATETIME),
+                  sql.Column('arena', sql.VARCHAR(64)),
+                  sql.Column('national_broadcast', sql.VARCHAR(32)),
                   sql.Column('home_team_id', sql.INT),
                   sql.Column('home_score', sql.SMALLINT),
                   sql.Column('away_team_id', sql.INT),
                   sql.Column('away_score', sql.SMALLINT),
+                  sql.Column('overtime', sql.VARCHAR(3)),
                   sql.Column('season', sql.SMALLINT),
                   sql.Column('is_playoffs', sql.SMALLINT))
         metadata.create_all()

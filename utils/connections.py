@@ -6,9 +6,9 @@ from sqlalchemy.exc import ProgrammingError
 
 
 # Set up MySQL Connections
-def get_connection(db):
+def get_connection(db: str):
     try:
-        engine = sql.create_engine(f'mysql://{user}:{password}@{host}/{db}?charset=utf8mb4')
+        engine = sql.create_engine(f'mysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{db}?charset=utf8mb4')
         connection = engine.connect()
         metadata = sql.MetaData(engine)
         print(Colour.green + f'Established SQL connection to {db} schema' + Colour.end)
@@ -35,11 +35,11 @@ def get_column_query(metadata, engine, name, column):
     return output
 
 
-def get_delete_query(metadata, engine, name, column, series):
+def get_delete_query(metadata, engine, name: str, column: str, values: list):
     metadata.reflect(bind=engine)
     table = metadata.tables[name]
 
-    output = table.delete().where(table.c[column].in_(series))
+    output = table.delete().where(table.c[column].in_(values))
     return output
 
 

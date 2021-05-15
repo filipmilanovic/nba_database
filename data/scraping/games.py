@@ -5,30 +5,24 @@ from data import *
 def all_game_data():
     """ set up iterations to get all data """
     iterations = list(range(len(season_range)))
-    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        executor.map(season_data, iterations)
-        executor.shutdown()
+    for iteration in iterations:
+        get_season_data(iteration)
 
 
-def season_data(iteration):
+def get_season_data(iteration: int):
     """ get data for the season """
     iteration_start_time = time.time()
 
     season = season_range[iteration]
 
-    # get regular season games
-    generate_logs_json(season, 0)
-    logs_regular_season = get_logs(game_generator.response)
-    games_regular_season = get_games(logs_regular_season, season, 0)
+    # get game logs
+    generate_game_logs_json(season)
+    game_logs = get_game_logs(game_generator.response)
 
-    # get playoff games
-    generate_logs_json(season, 1)
-    log_playoffs = get_logs(game_generator.response)
-    playoffs_regular_season = get_games(log_playoffs, season, 1)
+    # extract game information
+    games = get_games(game_logs, season)
 
-    output = games_regular_season.append(playoffs_regular_season)
-
-    write_season_data(output, iteration)
+    write_season_data(games, iteration)
 
     # sleep to avoid hitting rate limit on requests
     sleep_time = get_sleep_time(iteration_start_time, 1)
@@ -36,73 +30,128 @@ def season_data(iteration):
     time.sleep(sleep_time)
 
 
-def generate_logs_json(season, is_playoffs):
+def generate_game_logs_json(season: int):
     """ get the game logs for a given season type """
     # build parameters for regular season request
-    parameters_regular_season = get_request_parameters(season, is_playoffs)
+    parameters_regular_season = get_request_parameters(season)
     game_generator.send_request(parameters_regular_season)
 
 
-def get_request_parameters(season, is_playoffs):
+def get_request_parameters(season: int):
     """ generate the parameters for the request """
-    output = {'Counter': '0',
-              'Direction': 'DESC',
-              'LeagueID': '00',
-              'PlayerOrTeam': 'T',
-              'Season': season - 1,
-              'SeasonType': season_type[is_playoffs],
-              'Sorter': 'DATE'}
+    output = {'LeagueID': '00',
+              'Season': season - 1}
 
     return output
 
 
-def get_logs(json):
+def get_game_logs(json):
     """ create data frame of games from json """
-    logs = json['resultSets'][0]
-    logs_columns = logs['headers']
-    logs_rows = logs['rowSet']
-    
-    logs_df = pd.DataFrame.from_dict(data=logs_rows)
-    logs_df.columns = logs_columns
+    logs = json['leagueSchedule']['gameDates']
+    game_log = [row for row in [rows['games'] for rows in logs] for row in row]
 
-    output = check_db_duplicates(logs_df, 'GAME_ID', 'games', 'game_id', metadata, engine, connection)
+    output = handle_db_duplicates(game_log, False, 'gameId', 'games', 'game_id', metadata, engine, connection)
 
     return output
 
 
-def get_games(df, season, is_playoffs):
-    """ convert game logs to final games table """
-    df['IS_HOME'] = 1 - df['MATCHUP'].str.contains('@')
-
-    output = pd.DataFrame(columns=columns)
-
-    output[['game_id', 'game_date']] = get_game_id_date(df)
-    output[['home_team_id', 'home_score']] = get_team_data(df=df, is_home=True)
-    output[['away_team_id', 'away_score']] = get_team_data(df=df, is_home=False)
-    output['season'] = [int(season)] * len(output)
-    output['is_playoffs'] = [is_playoffs] * len(output)
-
-    return output
-
-
-def get_game_id_date(df):
-    """ get distinct game ID and game date """
-    df_subset = df[['GAME_ID', 'GAME_DATE']]
-    output = df_subset.drop_duplicates(subset='GAME_ID').reset_index(drop=True)
+def get_games(data: dict, season: int):
+    """ convert game logs to final games table and exclude non-competitive games"""
+    output = [get_game_data(game, season) for game in data
+              # remove All-Star teams and errors
+              if game['homeTeam']['teamId'] not in list(range(1610616800, 1610616900)) + [0]
+              # from season 2018 onwards, API returns regular season week number, and playoffs game number
+              and ((game['weekNumber'] > 0
+                    or game['seriesGameNumber'] != '')
+                   # before season 2018, a manual input dictionary for season start dates has been added
+                   or ((season <= 2017)
+                       and (get_home_time(game, season) >= get_season_start_date(season))))]
 
     return output
 
 
-def get_team_data(df, is_home):
-    """ get team ID and score for the game """
-    output = df.loc[df['IS_HOME'] == is_home, ['TEAM_ID', 'PTS']].reset_index(drop=True)
+def get_game_data(game_dict: dict, season: int):
+    playoff_info = get_playoff_info(game_dict)
+
+    output = {'game_id': game_dict['gameId'],
+              'game_time': get_home_time(game_dict, season),
+              'arena': game_dict['arenaName'],
+              'national_broadcast': get_national_broadcaster(game_dict),
+              'home_team_id': game_dict['homeTeam']['teamId'],
+              'home_score': game_dict['homeTeam']['score'],
+              'away_team_id': game_dict['awayTeam']['teamId'],
+              'away_score': game_dict['awayTeam']['score'],
+              'overtime': get_ot_info(game_dict['gameStatusText']),
+              'season': season,
+              'is_playoffs': len(playoff_info)/6
+              }
 
     return output
 
 
-def write_season_data(df, iteration):
+def get_playoff_info(game_dict: dict):
+    try:
+        output = game_dict['seriesGameNumber']
+    except IndexError:
+        output = None
+
+    return output
+
+
+def get_national_broadcaster(game_dict: dict):
+    try:
+        output = game_dict['broadcasters']['nationalBroadcasters'][0]['broadcasterDisplay']
+    except IndexError:
+        output = None
+
+    return output
+
+
+def get_ot_info(game_status_text: str):
+    output = re.search(r'Final/(.*)', game_status_text)
+
+    if output:
+        output = output.group(1)
+
+    return output
+
+
+def get_home_time(game_dict: dict, season: int):
+    """ get localised datetime for game"""
+    # prior to 2003, homeTeamTime not population
+    if season <= 2003:
+        game_time_utc = get_datetime(game_dict['gameDateTimeUTC'])
+        state = game_dict['arenaState']
+
+        # conversion errors caused by international pre-season games, so just set to UTC and it will be excluded
+        try:
+            output = convert_timezone(game_time_utc, state)
+        except AttributeError:
+            output = game_time_utc
+    else:
+        output = get_datetime(game_dict['homeTeamTime'])
+
+    return output
+
+
+def get_datetime(date_str: str):
+    output = dt.strptime(date_str, '%Y-%m-%dT%H:%M:%SZ')
+
+    return output
+
+
+def get_season_start_date(season: int):
+    try:
+        output = season_start_dates[season]
+    except KeyError:
+        output = dt.datetime(season, 1, 1)
+
+    return output
+
+
+def write_season_data(data: list, iteration: int):
     """ write season data to the DB """
-    status = write_data(df=df,
+    status = write_data(df=pd.DataFrame(data),
                         name='games',
                         sql_engine=engine,
                         db_schema='nba',
@@ -117,12 +166,12 @@ def write_season_data(df, iteration):
 
 
 if __name__ == '__main__':
-    engine, metadata, connection = get_connection(database)
+    engine, metadata, connection = get_connection(MYSQL_DATABASE)
     create_table_games(engine, metadata)
 
     columns = [c.name for c in sql.Table('games', metadata, autoload=True).columns]
 
-    game_generator = NBAEndpoint(endpoint='leaguegamelog')
+    game_generator = NBAEndpoint(endpoint='scheduleLeaguev2')
 
     # pick up date range from parameters
     season_range = pd.Series(range(start_season_games, end_season_games + 1))

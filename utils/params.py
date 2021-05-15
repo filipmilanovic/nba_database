@@ -2,7 +2,7 @@
 from datetime import datetime as dt
 
 # Dates for table games
-start_season_games = 1999
+start_season_games = 2001
 end_season_games = 2020
 
 # Dates for table plays

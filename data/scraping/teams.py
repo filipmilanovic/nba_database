@@ -128,7 +128,7 @@ def write_team_data(team_info, iteration, iterations):
 
 
 if __name__ == '__main__':
-    engine, metadata, connection = get_connection(database)
+    engine, metadata, connection = get_connection(MYSQL_DATABASE)
     create_table_teams(engine, metadata)
 
     columns = [c.name for c in sql.Table('teams', metadata, autoload=True).columns]
