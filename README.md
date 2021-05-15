@@ -32,7 +32,7 @@ To ensure everything runs smoothly, the modules should be run in the following o
 
 [scraping.games.py](data/scraping/games.py) - this scrapes daily score data from [stats.nba.com](stats.nba.com)
 within the date range defined in [params.py](utils/params.py) and writes the data to `nba.games` in the DB.
-(~15 seconds)
+(20 seconds)
 
 [scraping.game_lineups](data/scraping/games_lineups.py) - this goes through the box score for each game in
 `nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to

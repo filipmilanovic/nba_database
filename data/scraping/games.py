@@ -46,7 +46,7 @@ def get_request_parameters(season: int):
 
 
 def get_game_logs(json):
-    """ create data frame of games from json """
+    """ create list of games dicts from json """
     logs = json['leagueSchedule']['gameDates']
     game_log = [row for row in [rows['games'] for rows in logs] for row in row]
 
@@ -71,6 +71,7 @@ def get_games(data: dict, season: int):
 
 
 def get_game_data(game_dict: dict, season: int):
+    """ get dictionary of game information """
     playoff_info = get_playoff_info(game_dict)
 
     output = {'game_id': game_dict['gameId'],
@@ -90,6 +91,7 @@ def get_game_data(game_dict: dict, season: int):
 
 
 def get_playoff_info(game_dict: dict):
+    """ get game number of playoff series """
     try:
         output = game_dict['seriesGameNumber']
     except IndexError:
@@ -99,6 +101,7 @@ def get_playoff_info(game_dict: dict):
 
 
 def get_national_broadcaster(game_dict: dict):
+    """ get national broadcasting information """
     try:
         output = game_dict['broadcasters']['nationalBroadcasters'][0]['broadcasterDisplay']
     except IndexError:
@@ -108,6 +111,7 @@ def get_national_broadcaster(game_dict: dict):
 
 
 def get_ot_info(game_status_text: str):
+    """ extract number of OTs """
     output = re.search(r'Final/(.*)', game_status_text)
 
     if output:
@@ -141,6 +145,7 @@ def get_datetime(date_str: str):
 
 
 def get_season_start_date(season: int):
+    """ get the season start date, or set to start of year to avoid equation errors """
     try:
         output = season_start_dates[season]
     except KeyError:
