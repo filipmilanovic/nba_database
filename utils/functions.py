@@ -79,7 +79,7 @@ def handle_db_duplicates(data,
         rows = data['rowSet']
         header_loc = headers.index(data_key)
 
-        index = [row[header_loc] for row in rows] + ['test']
+        index = [row[header_loc] for row in rows]
     else:
         index = [key[data_key] for key in data]
 

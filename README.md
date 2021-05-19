@@ -28,7 +28,7 @@ The `write_data`, `load_data` and `initialise_df` functions have been defined at
 To ensure everything runs smoothly, the modules should be run in the following order:
 
 [cleaning.teams.py](data/scraping/teams.py) - this gets the team data from stats.nba.com and writes to
-`nba.teams` in the DB. (15 minutes)
+`nba.teams` in the DB. (10 minutes)
 
 [scraping.games.py](data/scraping/games.py) - this scrapes daily score data from [stats.nba.com](stats.nba.com)
 within the date range defined in [params.py](utils/params.py) and writes the data to `nba.games` in the DB.

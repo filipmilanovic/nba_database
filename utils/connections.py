@@ -2,7 +2,7 @@
 import sqlalchemy as sql
 from utils.colours import *
 from utils.environment import *
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import ProgrammingError, IntegrityError
 
 
 # Set up MySQL Connections
@@ -33,6 +33,16 @@ def get_column_query(metadata, engine, name, column):
     table = metadata.tables[name]
     output = sql.sql.select([table.c[column]]).distinct()
     return output
+
+
+def get_write_query(metadata, connection, data: dict, target_table: str):
+    try:
+        connection.execute(metadata.tables[target_table].insert(), data)
+        status = Colour.green + 'DB (Success)' + Colour.end
+    except IntegrityError:
+        status = Colour.red + 'DB (Already Exists)' + Colour.end
+
+    return status
 
 
 def get_delete_query(metadata, engine, name: str, column: str, values: list):

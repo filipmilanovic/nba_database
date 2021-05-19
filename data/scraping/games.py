@@ -2,7 +2,7 @@
 from data import *
 
 
-def all_game_data():
+def all_games_data():
     """ set up iterations to get all data """
     iterations = list(range(len(season_range)))
     for iteration in iterations:
@@ -31,10 +31,10 @@ def get_season_data(iteration: int):
 
 
 def generate_game_logs_json(season: int):
-    """ get the game logs for a given season type """
-    # build parameters for regular season request
-    parameters_regular_season = get_request_parameters(season)
-    game_generator.send_request(parameters_regular_season)
+    """ get the game logs for a given season """
+    # build parameters for season request
+    parameters_season = get_request_parameters(season)
+    game_generator.send_request(parameters_season)
 
 
 def get_request_parameters(season: int):
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     # pick up date range from parameters
     season_range = pd.Series(range(start_season_games, end_season_games + 1))
 
-    all_game_data()
+    all_games_data()
 
     # return to regular output writing
     sys.stdout.write('\n')

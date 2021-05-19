@@ -1,23 +1,76 @@
-# CONVERTING TEAMS TO DATAFRAME
-## GRAB HISTORICAL NAMES AND ARENA
-## ADD REBUILD_DB HANDLING
+# LOADING TEAMS INTO DB
 from data import *
-from sqlalchemy.exc import IntegrityError
 
 
-def all_team_data():
+def get_seasons_teams():
     """ generate teams by season, then get team detail for each season """
-    generate_teams_seasons_json()
-    teams_seasons = get_teams_seasons(team_season_generator.response)
+    generate_seasons_teams_json()
+    tidy_dict = tidy_seasons_teams(seasons_teams_generator.response)
+    output = handle_db_duplicates(tidy_dict, False, 'team_season_id', 'teams', 'team_season_id',
+                                  metadata, engine, connection)
 
-    iterations = len(teams_seasons)
+    return output
 
-    for iteration in range(iterations):
+
+def generate_seasons_teams_json():
+    """ get all season and team combinations """
+    parameters_seasons_teams = get_seasons_teams_parameters()
+    seasons_teams_generator.send_request(parameters_seasons_teams)
+    seasons_teams_generator.close_session()
+
+
+def get_seasons_teams_parameters():
+    """ generate the parameters for the request """
+    output = {'LeagueID': '00'}
+
+    return output
+
+
+def tidy_seasons_teams(json: dict):
+    """ get the json of season_teams and output tidied dictionary """
+    teams = json['resultSets'][0]
+    teams_columns = teams['headers']
+    teams_rows = teams['rowSet']
+    output = []
+
+    for team in teams_rows:
+        data_dict = dict(zip(teams_columns, team))
+        season_team = get_season_team_dict(data_dict)
+        output += [{'team_season_id': season_team['team_id'] + season * 10000000000,
+                    'team_id': season_team['team_id'],
+                    'season': season + 1}
+                   for season in range(season_team['start_year'], season_team['end_year'])]
+
+    return output
+
+
+def get_season_team_dict(data_dict: dict):
+    """ convert raw data to tidied dictionary """
+    output = {
+        'team_id': data_dict['TEAM_ID'],
+        'start_year': max(int(data_dict['MIN_YEAR']), start_season_games - 1),
+        'end_year': int(data_dict['MAX_YEAR'])
+    }
+
+    return output
+
+
+def get_teams(seasons_teams_list):
+    """ get team information by season and write to db """
+    iterations = list(range(len(seasons_teams_list)))
+
+    for iteration in iterations:
         iteration_start_time = time.time()
 
-        team_info = get_team_info(teams_seasons[iteration])
-        season = teams_seasons[iteration][1]
-        team_dict = get_team_dict(team_info, season)
+        season_team = seasons_teams_list[iteration]
+
+        try:
+            team_info = get_team_info(season_team)
+        except IndexError:
+            print(f"team_id {season_team['team_id']} doesn't return anything in {season_team['season']}")
+            continue
+
+        team_dict = get_team_dict(team_info, season_team['season'])
 
         write_team_data(team_dict, iteration, iterations)
 
@@ -27,104 +80,63 @@ def all_team_data():
         time.sleep(sleep_time)
 
 
-def generate_teams_seasons_json():
-    parameters_team_season = get_teams_seasons_parameters()
-    team_season_generator.send_request(parameters_team_season)
-    team_season_generator.close_session()
-
-
-def get_teams_seasons_parameters():
-    """ generate the parameters for the request """
-    output = {'LeagueID': '00'}
-
-    return output
-
-
-def get_teams_seasons(json):
-    teams = json['resultSets'][0]
-    teams_columns = teams['headers']
-    teams_rows = teams['rowSet']
-
-    output = []
-
-    for i in teams_rows:
-        data_dict = dict(zip(teams_columns, i))
-        team_season = get_team_season_dict(data_dict)
-        output += [(team_season['team_id'], year) for year in range(team_season['start_year'], team_season['end_year'])]
-        output = list(set(output))
-
-    return output
-
-
-def get_team_season_dict(data_dict):
-    output = {
-        'team_id': data_dict['TEAM_ID'],
-        'start_year': max(int(data_dict['START_YEAR']), start_season_games),
-        'end_year': int(data_dict['END_YEAR'])
-    }
-
-    return output
-
-
-def get_team_info(teams_seasons):
-    generate_team_json(teams_seasons)
+def get_team_info(team_season: dict):
+    """ get dictionary of team information """
+    generate_team_json(team_season)
 
     json = team_generator.response
-    team_season = json['resultSets'][0]
 
-    data_columns = team_season['headers']
-    data_rows = team_season['rowSet'][0]
+    team_info = json['resultSets'][0]
+    data_columns = team_info['headers']
+    data_rows = team_info['rowSet'][0]
+
     output = dict(zip(data_columns, data_rows))
 
     return output
 
 
-def generate_team_json(team_parameters):
-    parameters_teams = get_request_parameters(team_parameters)
-    team_generator.send_request(parameters_teams)
+def generate_team_json(team_parameters: dict):
+    """ generate json for a specific team and season combination """
+    request_parameters = get_request_parameters(team_parameters)
+    team_generator.send_request(request_parameters)
 
 
-def get_request_parameters(team_parameters):
+def get_request_parameters(team_parameters: dict):
     """ generate the parameters for the request """
-    team_id = team_parameters[0]
-    season = team_parameters[1]
-    output = {'TeamID': team_id,
-              'Season': season}
+    team_id = team_parameters['team_id']
+    season = team_parameters['season']
+    output = {'LeagueID': '00',
+              'TeamID': team_id,
+              'Season': season - 1,
+              'SeasonType': 'Regular Season'}
 
     return output
 
 
-def get_team_dict(data_dict, season):
+def get_team_dict(data_dict: dict, season: int):
+    """ convert raw data to a tidied dictionary """
     output = {
-        'team_season_id': data_dict['TEAM_ID'] * 10000 + season,
+        'team_season_id': data_dict['TEAM_ID'] + season * 10000000000,
         'team_id': data_dict['TEAM_ID'],
-        'team_name': data_dict['CITY'] + ' ' + data_dict['NICKNAME'],
-        'team_short_name': data_dict['ABBREVIATION'],
-        'season': season + 1,
-        'arena': get_arena(data_dict)
+        'team_name': data_dict['TEAM_CITY'] + ' ' + data_dict['TEAM_NAME'],
+        'abbreviation': data_dict['TEAM_ABBREVIATION'],
+        'conference': data_dict['TEAM_CONFERENCE'],
+        'division': data_dict['TEAM_DIVISION'],
+        'season': season
     }
 
     return output
 
 
-def get_arena(data_dict):
-    output = data_dict['ARENA']
-
-    return output
-
-
-def write_team_data(team_info, iteration, iterations):
-    try:
-        connection.execute(metadata.tables['teams'].insert(), [team_info])
-        status_sql = Colour.green + 'DB (Success)' + Colour.end
-    except IntegrityError:
-        status_sql = Colour.red + 'DB (Already Exists)' + Colour.end
+def write_team_data(team_info: dict, iteration: int, iterations: list):
+    """ write the data to the db """
+    status = get_write_query(metadata, connection, team_info, 'teams')
 
     progress(iteration=iteration,
-             iterations=iterations,
+             iterations=len(iterations),
              iteration_name=f'{team_info["team_name"]} {team_info["season"]}',
              lapsed=time_lapsed(),
-             sql_status=status_sql)
+             sql_status=status)
 
 
 if __name__ == '__main__':
@@ -133,10 +145,14 @@ if __name__ == '__main__':
 
     columns = [c.name for c in sql.Table('teams', metadata, autoload=True).columns]
 
-    team_season_generator = NBAEndpoint(endpoint='franchisehistory')
-    team_generator = NBAEndpoint(endpoint='teamdetails')
+    seasons_teams_generator = NBAEndpoint(endpoint='commonteamyears')
+    team_generator = NBAEndpoint(endpoint='teaminfocommon')
 
-    all_team_data()
+    # get list of team_id and season pairs
+    seasons_teams = get_seasons_teams()
+
+    # get team information by season
+    get_teams(seasons_teams)
 
     # return to regular output writing
     sys.stdout.write('\n')
