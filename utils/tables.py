@@ -54,7 +54,7 @@ def create_table_playoffs(engine, metadata):
         sql.Table('playoffs', metadata,
                   sql.Column('series_id', sql.VARCHAR(9), primary_key=True, nullable=False),
                   sql.Column('conference', sql.VARCHAR(16)),
-                  sql.Column('round', sql.SMALLINT),
+                  sql.Column('playoff_round', sql.SMALLINT),
                   sql.Column('higher_seed_team_id', sql.INT),
                   sql.Column('higher_seed', sql.SMALLINT),
                   sql.Column('lower_seed_team_id', sql.INT),
@@ -100,6 +100,20 @@ def create_table_plays_raw(engine, metadata):
                   sql.Column('player_1', sql.VARCHAR(9)),
                   sql.Column('player_2', sql.VARCHAR(9)),
                   sql.Column('player_3', sql.VARCHAR(9)),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
+        metadata.create_all()
+
+
+def create_table_standings(engine, metadata):
+    if not engine.dialect.has_table(engine, 'standings'):
+        sql.Table('standings', metadata,
+                  sql.Column('team_season_id', sql.BIGINT, primary_key=True, nullable=False),
+                  sql.Column('season', sql.SMALLINT),
+                  sql.Column('team_id', sql.INT),
+                  sql.Column('wins', sql.SMALLINT),
+                  sql.Column('losses', sql.SMALLINT),
+                  sql.Column('playoff_seed', sql.SMALLINT),
+                  sql.Column('league_rank', sql.SMALLINT),
                   sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 

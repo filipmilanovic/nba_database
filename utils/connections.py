@@ -121,3 +121,9 @@ def check_db_duplicates(data,
     output = data
 
     return output
+
+
+def get_query(query_path: str, file_name: str, extension='sql'):
+    query_location = f'{query_path}{file_name}.{extension}'
+    with open(query_location, 'r+') as f:
+        return f.read()

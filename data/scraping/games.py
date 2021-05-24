@@ -1,3 +1,4 @@
+## ADD PLAY-IN INFORMATION
 from data import *
 
 
@@ -188,6 +189,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'games'
     TABLE_PRIMARY_KEY = 'game_id'
+    QUERY_PATH = f'{DATA_PATH}/queries/{TARGET_TABLE}/'
 
     game_generator = NBAEndpoint(endpoint='scheduleLeaguev2')
     playoffs_generator = NBAEndpoint(endpoint='commonplayoffseries')
@@ -196,6 +198,10 @@ if __name__ == '__main__':
     season_range = pd.Series(range(START_SEASON, END_SEASON + 1))
 
     all_games_data()
+
+    query = get_query(QUERY_PATH, 'add_series_info', 'sql')
+    connection.execute(query)
+    connection.execute('COMMIT')
 
     # return to regular output writing
     sys.stdout.write('\n')

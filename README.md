@@ -22,20 +22,39 @@ By default, this project has been set up to work with MySQL databases.  All the 
 The connection parameters can be adjusted at [environment.py](utils/environment.py).
 
 #### Data Scraping and Cleaning
-The following scripts develop the corresponding tables in the DB (approximate time per season in brackets):
+The following scripts access [stats.nba.com](stats.nba.com) endpoints within the date range defined in
+[params.py](utils/params.py).  These scripts should be run in the following order to most completely develop the
+corresponding tables in the DB (approximate time per season in brackets):
 
+[scraping.teams.py](data/scraping/teams.py) - gets the team data from `commonteamyears` and `teaminfocommon` and writes
+to `nba.teams` (30 seconds)
 
-[scraping.games.py](data/scraping/games.py) - this scrapes daily score data from [stats.nba.com](stats.nba.com)
-within the date range defined in [params.py](utils/params.py) and writes the data to `nba.games` in the DB.
-(2 seconds)
+[scraping.standings.py](data/scraping/standings.py) - gets the season-by-season record and standings data from
+`leaguestandingsv3` and writes to `nba.standings`.  There is an issue with two teams ranked as the 5th seed in the West
+in 2001, so a [query](data/queries/standings/fix_seeds.sql) is run to correct it (1 second)
+
+[scraping.games.py](data/scraping/games.py) - gets game data from `scheduleLeaguev2` and writes the data to
+`nba.games`.  Playoff series identifiers are grabbed from `commonplayoffseries`, although this is incomplete from 2001
+and earlier, so a [query](data/queries/games/add_series_info.sql) is run to populate the missing data(2 seconds)
+
+[scraping.playoffs.py](data/scraping/playoffs.py) - accesses playoff series information from `playoffbracket` and
+writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
+[query](data/queries/playoffs/add_teams_info.sql) is run to populate missing data (1 seconds)
+
+[scraping.players.py](data/scraping/players.py) - gets all player information from `playerindex` and populates
+`nba.players` (instant)
+
+[cleaning.transactions.py](data/scraping/transactions.py) - gets player transaction json with data from 2015 onwards
+from a static [NBA_Player_Movement](https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json) file and
+writes to `nba.transactions` (instant)
 
 [scraping.game_lineups](data/scraping/games_lineups.py) - this goes through the box score for each game in
 `nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to
 `nba.games_lineups` in the DB. (~2 hours)
 
-[scraping.players.py](data/scraping/players.py) - this pulls the entire roster for each game-season
-combination in the `nba.games`, then scrapes information about each player in the list, then writes the data to
-`nba.players` in the DB. (Instant)
+[scraping.plays_raw.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
+Basketball Reference for all games that appear within both the nba.games table, and the date range defined in
+[params.py](utils/params.py), then writes the data to `nba_raw.plays_raw` in the DB. (~2 hours)
 
 [cleaning.plays.py](data/cleaning/plays.py) - this applies logic to all raw play by play rows in
 `nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
@@ -48,17 +67,7 @@ through plays in each quarter, and figures out which players contributed/substit
 entire quarter without any contributions, so the box scores are scraped to figure out where the minutes discrepancies
 occur. (~45 minutes)
 
-[scraping.plays_raw.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
-Basketball Reference for all games that appear within both the nba.games table, and the date range defined in
-[params.py](utils/params.py), then writes the data to `nba_raw.plays_raw` in the DB. (~2 hours)
-
 [scraping.odds.py]() has been **deprecated** until a more reliable source is found
-
-[cleaning.teams.py](data/scraping/teams.py) - this gets the team data from stats.nba.com and writes to
-`nba.teams` in the DB. (30 seconds)
-
-[cleaning.transactions.py](data/scraping/transactions.py) - this gets player transaction data from 2015 onwards from 
-[stats.nba.com](stats.nba.com) and writes to `nba.transactions` in the DB. (30 seconds)
 
 
 ### Analysis & Modelling

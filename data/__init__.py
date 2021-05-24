@@ -1,11 +1,14 @@
 from utils import *
 import numpy as np
 from bs4 import BeautifulSoup
+import os
 import re
 import threading
 import concurrent.futures
 from multiprocessing import Process, Manager
 from ordered_set import OrderedSet
+
+DATA_PATH = os.path.dirname(os.path.abspath(__file__))
 
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/' \
              '89.0.4389.90 Safari/537.36'
