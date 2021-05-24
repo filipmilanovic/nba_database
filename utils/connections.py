@@ -1,25 +1,70 @@
 # SETTING UP SQL CONNECTIONS
+import pandas as pd
 import sqlalchemy as sql
 from utils.colours import *
 from utils.environment import *
-from sqlalchemy.exc import ProgrammingError, IntegrityError
+from utils.functions import get_distinct_ids
+from utils.params import AS_UPSERT
+from sqlalchemy.exc import ProgrammingError
 
 
-# Set up MySQL Connections
 def get_connection(db: str):
+    """ set up MySQL connection """
     try:
-        engine = sql.create_engine(f'mysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{db}?charset=utf8mb4')
-        connection = engine.connect()
-        metadata = sql.MetaData(engine)
+        eng = sql.create_engine(f'mysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{db}?charset=utf8mb4')
+        conn = eng.connect()
+        meta = sql.MetaData(eng)
         print(Colour.green + f'Established SQL connection to {db} schema' + Colour.end)
     except sql.exc.OperationalError:
         print(Colour.red + f"Couldn't establish SQL connection to {db}" + Colour.end)
-        engine, metadata, connection = None, None, None
+        eng, meta, conn = None, None, None
 
-    return engine, metadata, connection
+    return eng, meta, conn
 
 
-# Set up generic queries
+def get_write_query(metadata, connection, data: list, target_table: str, delete_query=None):
+    if AS_UPSERT:
+        connection.execute(delete_query)
+    if data:
+        connection.execute(metadata.tables[target_table].insert(), data)
+        status = Colour.green + 'DB (Success)' + Colour.end
+    else:
+        status = 'DB (Nothing to write)'
+
+    return status
+
+
+def get_delete_query(metadata, engine, target_table: str, column: str, values: list):
+    metadata.reflect(bind=engine)
+    table = metadata.tables[target_table]
+
+    output = table.delete().where(table.c[column].in_(values))
+
+    return output
+
+
+def write_data(engine, metadata, connection, data: list, target_table: str, primary_key: str):
+    """ write data to the DB """
+    distinct_ids = get_distinct_ids(data, primary_key)
+
+    if AS_UPSERT:
+        delete_query = get_delete_query(metadata=metadata,
+                                        engine=engine,
+                                        target_table=target_table,
+                                        column=primary_key,
+                                        values=distinct_ids)
+    else:
+        delete_query = None
+
+    status = get_write_query(metadata=metadata,
+                             connection=connection,
+                             data=data,
+                             target_table=target_table,
+                             delete_query=delete_query)
+
+    return status
+
+
 def get_table_query(metadata, engine, name, column, cond):
     metadata.reflect(bind=engine)
     table = metadata.tables[name]
@@ -35,24 +80,6 @@ def get_column_query(metadata, engine, name, column):
     return output
 
 
-def get_write_query(metadata, connection, data: dict, target_table: str):
-    try:
-        connection.execute(metadata.tables[target_table].insert(), data)
-        status = Colour.green + 'DB (Success)' + Colour.end
-    except IntegrityError:
-        status = Colour.red + 'DB (Already Exists)' + Colour.end
-
-    return status
-
-
-def get_delete_query(metadata, engine, name: str, column: str, values: list):
-    metadata.reflect(bind=engine)
-    table = metadata.tables[name]
-
-    output = table.delete().where(table.c[column].in_(values))
-    return output
-
-
 def get_join_query(metadata, engine, left, right, column=False, cond=False):
     metadata.reflect(bind=engine)
     left_table = metadata.tables[left]
@@ -63,5 +90,34 @@ def get_join_query(metadata, engine, left, right, column=False, cond=False):
         output = sql.sql.select('*').select_from(join).where(left_table.c[column].in_(cond))
     except KeyError:
         output = sql.sql.select('*').select_from(join)
+
+    return output
+
+
+def check_db_duplicates(data,
+                        use_headers: bool,
+                        data_key: str,
+                        target_table: str,
+                        target_key: str,
+                        metadata,
+                        engine,
+                        connection):
+    """ check for existing observations in the DB """
+    if not AS_UPSERT:
+        # find rows where data already exists in DB
+        selectable = get_column_query(metadata, engine, target_table, target_key)
+        skip = pd.read_sql(sql=selectable, con=connection)[target_key].tolist()
+
+        if use_headers:
+            # get location for key in each row of data
+            headers = data['headers']
+            rows = data['rowSet']
+            header_loc = headers.index(data_key)
+
+            data['rowSet'] = [row for row in rows if str(row[header_loc]) not in skip]
+        else:
+            data = [row for row in data if row[data_key] not in skip]
+
+    output = data
 
     return output

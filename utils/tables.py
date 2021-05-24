@@ -16,7 +16,10 @@ def create_table_games(engine, metadata):
                   sql.Column('away_score', sql.SMALLINT),
                   sql.Column('overtime', sql.VARCHAR(3)),
                   sql.Column('season', sql.SMALLINT),
-                  sql.Column('is_playoffs', sql.SMALLINT))
+                  sql.Column('is_playoffs', sql.SMALLINT),
+                  sql.Column('series_id', sql.VARCHAR(9)),
+                  sql.Column('series_game', sql.SMALLINT),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 
 
@@ -26,16 +29,8 @@ def create_table_games_lineups(engine, metadata):
                   sql.Column('game_id', sql.VARCHAR(12), index=True, nullable=False),
                   sql.Column('team_id', sql.VARCHAR(3)),
                   sql.Column('player_id', sql.VARCHAR(9)),
-                  sql.Column('role', sql.VARCHAR(7)))
-        metadata.create_all()
-
-
-def create_table_odds(engine, metadata):
-    if not engine.dialect.has_table(engine, 'odds'):
-        sql.Table('odds', metadata,
-                  sql.Column('game_id', sql.VARCHAR(12), index=True, nullable=False),
-                  sql.Column('home_odds', sql.DECIMAL(4, 2)),
-                  sql.Column('away_odds', sql.DECIMAL(4, 2)))
+                  sql.Column('role', sql.VARCHAR(7)),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 
 
@@ -44,14 +39,27 @@ def create_table_players(engine, metadata):
         sql.Table('players', metadata,
                   sql.Column('player_id', sql.VARCHAR(9), primary_key=True, nullable=False),
                   sql.Column('player_name', sql.VARCHAR(64)),
-                  sql.Column('dob', sql.DATE),
                   sql.Column('height', sql.SMALLINT),
                   sql.Column('weight', sql.SMALLINT),
-                  sql.Column('hand', sql.VARCHAR(5)),
+                  sql.Column('country', sql.VARCHAR(32)),
+                  sql.Column('college', sql.VARCHAR(64)),
                   sql.Column('position', sql.VARCHAR(16)),
-                  sql.Column('draft_year', sql.SMALLINT),
-                  sql.Column('draft_pick', sql.SMALLINT),
-                  sql.Column('rookie_year', sql.SMALLINT))
+                  sql.Column('latest_team_id', sql.INT),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
+        metadata.create_all()
+
+
+def create_table_playoffs(engine, metadata):
+    if not engine.dialect.has_table(engine, 'playoffs'):
+        sql.Table('playoffs', metadata,
+                  sql.Column('series_id', sql.VARCHAR(9), primary_key=True, nullable=False),
+                  sql.Column('conference', sql.VARCHAR(16)),
+                  sql.Column('round', sql.SMALLINT),
+                  sql.Column('higher_seed_team_id', sql.INT),
+                  sql.Column('higher_seed', sql.SMALLINT),
+                  sql.Column('lower_seed_team_id', sql.INT),
+                  sql.Column('lower_seed', sql.SMALLINT),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 
 
@@ -68,7 +76,8 @@ def create_table_plays(engine, metadata):
                   sql.Column('event', sql.VARCHAR(32)),
                   sql.Column('event_value', sql.SMALLINT),
                   sql.Column('event_detail', sql.VARCHAR(32)),
-                  sql.Column('possession', sql.SMALLINT))
+                  sql.Column('possession', sql.SMALLINT),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 
 
@@ -78,7 +87,8 @@ def create_table_plays_players(engine, metadata):
                   sql.Column('play_id', sql.VARCHAR(16), primary_key=True, nullable=False),
                   sql.Column('game_id', sql.VARCHAR(12)),
                   sql.Column('players', sql.VARCHAR(49)),
-                  sql.Column('opp_players', sql.VARCHAR(49)))
+                  sql.Column('opp_players', sql.VARCHAR(49)),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 
 
@@ -89,7 +99,8 @@ def create_table_plays_raw(engine, metadata):
                   sql.Column('plays', sql.VARCHAR(128)),
                   sql.Column('player_1', sql.VARCHAR(9)),
                   sql.Column('player_2', sql.VARCHAR(9)),
-                  sql.Column('player_3', sql.VARCHAR(9)))
+                  sql.Column('player_3', sql.VARCHAR(9)),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 
 
@@ -102,5 +113,17 @@ def create_table_teams(engine, metadata):
                   sql.Column('abbreviation', sql.VARCHAR(3)),
                   sql.Column('conference', sql.VARCHAR(4)),
                   sql.Column('division', sql.VARCHAR(10)),
-                  sql.Column('season', sql.INT))
+                  sql.Column('season', sql.INT),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
+
+
+def create_table_transactions(metadata):
+    sql.Table('transactions', metadata,
+              sql.Column('transaction_id', sql.VARCHAR(16), primary_key=True, nullable=False),
+              sql.Column('transaction_date', sql.DATE),
+              sql.Column('transaction_type', sql.VARCHAR(32)),
+              sql.Column('team_id', sql.INT),
+              sql.Column('player_id', sql.INT),
+              sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
+    metadata.create_all()

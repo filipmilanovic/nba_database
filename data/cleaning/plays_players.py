@@ -501,7 +501,7 @@ if __name__ == '__main__':
                                  meta=metadata)
 
     # get seasons from games table to iterate
-    seasons = pd.Series(range(start_season_games, end_season_games+1))
+    seasons = pd.Series(range(START_SEASON, END_SEASON + 1))
 
     write_all_plays_players(seasons)
 

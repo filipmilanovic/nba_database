@@ -21,18 +21,13 @@ By default, this project has been set up to work with MySQL databases.  All the 
 
 The connection parameters can be adjusted at [environment.py](utils/environment.py).
 
-The `write_data`, `load_data` and `initialise_df` functions have been defined at
-[functions.py](utils/functions.py) and will need to be adjusted  if another DB is to be used.
-
 #### Data Scraping and Cleaning
-To ensure everything runs smoothly, the modules should be run in the following order:
+The following scripts develop the corresponding tables in the DB (approximate time per season in brackets):
 
-[cleaning.teams.py](data/scraping/teams.py) - this gets the team data from stats.nba.com and writes to
-`nba.teams` in the DB. (10 minutes)
 
 [scraping.games.py](data/scraping/games.py) - this scrapes daily score data from [stats.nba.com](stats.nba.com)
 within the date range defined in [params.py](utils/params.py) and writes the data to `nba.games` in the DB.
-(20 seconds)
+(2 seconds)
 
 [scraping.game_lineups](data/scraping/games_lineups.py) - this goes through the box score for each game in
 `nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to
@@ -40,11 +35,7 @@ within the date range defined in [params.py](utils/params.py) and writes the dat
 
 [scraping.players.py](data/scraping/players.py) - this pulls the entire roster for each game-season
 combination in the `nba.games`, then scrapes information about each player in the list, then writes the data to
-`nba.players` in the DB. (~5 minutes)
-
-[scraping.plays_raw.py](data/scraping/plays_raw.py) - this scrapes the raw play-by-play rows from
-Basketball Reference for all games that appear within both the nba.games table, and the date range defined in
-[params.py](utils/params.py), then writes the data to `nba_raw.plays_raw` in the DB. (~2 hours)
+`nba.players` in the DB. (Instant)
 
 [cleaning.plays.py](data/cleaning/plays.py) - this applies logic to all raw play by play rows in
 `nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
@@ -57,7 +48,18 @@ through plays in each quarter, and figures out which players contributed/substit
 entire quarter without any contributions, so the box scores are scraped to figure out where the minutes discrepancies
 occur. (~45 minutes)
 
+[scraping.plays_raw.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
+Basketball Reference for all games that appear within both the nba.games table, and the date range defined in
+[params.py](utils/params.py), then writes the data to `nba_raw.plays_raw` in the DB. (~2 hours)
+
 [scraping.odds.py]() has been **deprecated** until a more reliable source is found
+
+[cleaning.teams.py](data/scraping/teams.py) - this gets the team data from stats.nba.com and writes to
+`nba.teams` in the DB. (30 seconds)
+
+[cleaning.transactions.py](data/scraping/transactions.py) - this gets player transaction data from 2015 onwards from 
+[stats.nba.com](stats.nba.com) and writes to `nba.transactions` in the DB. (30 seconds)
+
 
 ### Analysis & Modelling
 #### Potential analyses
@@ -71,27 +73,20 @@ occur. (~45 minutes)
 * Write cleaning.game_logs.py script to create a nicer dataset for predictive
   analysis
   
+* Fix performance testing in [performance.py](utils/performance.py)
+  
 * Re-do betting odds scraping
   
 * Add ejections to [cleaning.plays.py](data/cleaning/plays.py)
   
 * Access [NBA stats](http://stats.nba.com) for shot information (location, type, defenders)
-  
-* ~~Update [cleaning.plays.py](data/cleaning/plays.py) to include possession indicator and which players
-  are on the court~~
-  
-* ~~Add automated performance testing~~
-  
-* ~~Update all data modules to be faster (e.g. multi-processing, writing output in batches, more efficient code)~~
-  
+
 * Set up central control to build dataset from one script
   
 * Move scraping to use [nba.com](http://nba.com) - this is likely to be slower, but should be more accurate, so I manual fixes
 can be reduced and is probably also a bit more 'official'
 
 * Set up automated daily ingestion of data
-
-* ~~Keep chromedriver up to date automatically, or move to purely using the requests library~~
 
 * Convert `get_session` and pre-execution table clearing/iteration skipping into a
   [function](utils/functions.py)

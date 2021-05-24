@@ -7,5 +7,4 @@ from utils.environment import *
 from utils.functions import *
 from utils.headers import *
 from utils.params import *
-from utils.performance import *
 from utils.tables import *

@@ -1,4 +1,3 @@
-# LOADING TEAMS INTO DB
 from data import *
 
 
@@ -6,8 +5,8 @@ def get_seasons_teams():
     """ generate teams by season, then get team detail for each season """
     generate_seasons_teams_json()
     tidy_dict = tidy_seasons_teams(seasons_teams_generator.response)
-    output = handle_db_duplicates(tidy_dict, False, 'team_season_id', 'teams', 'team_season_id',
-                                  metadata, engine, connection)
+    output = check_db_duplicates(tidy_dict, False, 'team_season_id', TARGET_TABLE, TABLE_PRIMARY_KEY,
+                                 metadata, engine, connection)
 
     return output
 
@@ -38,8 +37,8 @@ def tidy_seasons_teams(json: dict):
         season_team = get_season_team_dict(data_dict)
         output += [{'team_season_id': season_team['team_id'] + season * 10000000000,
                     'team_id': season_team['team_id'],
-                    'season': season + 1}
-                   for season in range(season_team['start_year'], season_team['end_year'])]
+                    'season': season}
+                   for season in range(season_team['start_year'], season_team['end_year'] + 1)]
 
     return output
 
@@ -48,8 +47,8 @@ def get_season_team_dict(data_dict: dict):
     """ convert raw data to tidied dictionary """
     output = {
         'team_id': data_dict['TEAM_ID'],
-        'start_year': max(int(data_dict['MIN_YEAR']), start_season_games - 1),
-        'end_year': int(data_dict['MAX_YEAR'])
+        'start_year': max(int(data_dict['MIN_YEAR']) + 1, START_SEASON),
+        'end_year': min(int(data_dict['MAX_YEAR']) + 1, END_SEASON)
     }
 
     return output
@@ -72,7 +71,13 @@ def get_teams(seasons_teams_list):
 
         team_dict = get_team_dict(team_info, season_team['season'])
 
-        write_team_data(team_dict, iteration, iterations)
+        status = write_data(engine, metadata, connection, [team_dict], TARGET_TABLE, TABLE_PRIMARY_KEY)
+
+        progress(iteration=iteration,
+                 iterations=len(iterations),
+                 iteration_name=f'{team_dict["team_name"]} {team_dict["season"]}',
+                 lapsed=time_lapsed(),
+                 sql_status=status)
 
         # sleep to avoid rate limits
         sleep_time = get_sleep_time(iteration_start_time, 1)
@@ -128,22 +133,12 @@ def get_team_dict(data_dict: dict, season: int):
     return output
 
 
-def write_team_data(team_info: dict, iteration: int, iterations: list):
-    """ write the data to the db """
-    status = get_write_query(metadata, connection, team_info, 'teams')
-
-    progress(iteration=iteration,
-             iterations=len(iterations),
-             iteration_name=f'{team_info["team_name"]} {team_info["season"]}',
-             lapsed=time_lapsed(),
-             sql_status=status)
-
-
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(MYSQL_DATABASE)
     create_table_teams(engine, metadata)
 
-    columns = [c.name for c in sql.Table('teams', metadata, autoload=True).columns]
+    TARGET_TABLE = 'teams'
+    TABLE_PRIMARY_KEY = 'team_season_id'
 
     seasons_teams_generator = NBAEndpoint(endpoint='commonteamyears')
     team_generator = NBAEndpoint(endpoint='teaminfocommon')
@@ -157,5 +152,5 @@ if __name__ == '__main__':
     # return to regular output writing
     sys.stdout.write('\n')
 
-    print(Colour.green + 'Team Data Loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+    print(Colour.green + f'Table {TARGET_TABLE} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)
