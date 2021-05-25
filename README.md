@@ -35,7 +35,7 @@ in 2001, so a [query](data/queries/standings/fix_seeds.sql) is run to correct it
 
 [scraping.games.py](data/scraping/games.py) - gets game data from `scheduleLeaguev2` and writes the data to
 `nba.games`.  Playoff series identifiers are grabbed from `commonplayoffseries`, although this is incomplete from 2001
-and earlier, so a [query](data/queries/games/add_series_info.sql) is run to populate the missing data(2 seconds)
+and earlier, so a [query](data/queries/games/add_series_info.sql) is run to populate the missing data (2 seconds)
 
 [scraping.playoffs.py](data/scraping/playoffs.py) - accesses playoff series information from `playoffbracket` and
 writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
@@ -44,11 +44,14 @@ writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
 [scraping.players.py](data/scraping/players.py) - gets all player information from `playerindex` and populates
 `nba.players` (instant)
 
+[scraping.draft.py](data/scraping/draft.py) - gets all draft information from `drafthistory` and populates
+`nba.draft` (instant)
+
 [cleaning.transactions.py](data/scraping/transactions.py) - gets player transaction json with data from 2015 onwards
 from a static [NBA_Player_Movement](https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json) file and
 writes to `nba.transactions` (instant)
 
-[scraping.game_lineups](data/scraping/games_lineups.py) - this goes through the box score for each game in
+[scraping.games_lineups](data/scraping/games_lineups.py) - this goes through the box score for each game in
 `nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to
 `nba.games_lineups` in the DB. (~2 hours)
 

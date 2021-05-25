@@ -58,6 +58,7 @@ def get_series_logs(json, season: int):
 
 
 def get_series_data(series_info: dict, season: int):
+    """ convert raw data to a tidied dictionary """
     output = {'series_id': get_series_id(series_info['seriesId'],
                                          str(series_info['highSeedId']),
                                          str(series_info['lowSeedId']),

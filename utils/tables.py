@@ -2,7 +2,21 @@
 import sqlalchemy as sql
 
 
-# Set up building of tables
+def create_table_draft(engine, metadata):
+    if not engine.dialect.has_table(engine, 'draft'):
+        sql.Table('draft', metadata,
+                  sql.Column('draft_id', sql.VARCHAR(11), primary_key=True, nullable=False),
+                  sql.Column('player_id', sql.VARCHAR(9)),
+                  sql.Column('season', sql.SMALLINT),
+                  sql.Column('round_number', sql.SMALLINT),
+                  sql.Column('round_pick', sql.SMALLINT),
+                  sql.Column('overall_pick', sql.SMALLINT),
+                  sql.Column('team_id', sql.INT),
+                  sql.Column('previous_team', sql.VARCHAR(64)),
+                  sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
+        metadata.create_all()
+
+
 def create_table_games(engine, metadata):
     if not engine.dialect.has_table(engine, 'games'):
         sql.Table('games', metadata,

@@ -1,5 +1,3 @@
-# DEFINE USEFUL DICTIONARIES
-
 playoff_designation = {'002': 0,  # Regular Season
                        '004': 2,  # Playoffs
                        '005': 1}  # Play-In Tournament
