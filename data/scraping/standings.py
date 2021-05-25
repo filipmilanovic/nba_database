@@ -14,7 +14,6 @@ def get_season_data(iteration: int):
 
     season = season_range[iteration]
 
-    # get game logs
     generate_standings_json(season)
     standings = get_standings(standings_generator.response, season)
 
@@ -62,6 +61,7 @@ def get_standings(json, season: int):
 
 
 def get_standings_data(team_dict: dict, season: int):
+    """ take team/season dict and output cleaned dict """
     output = {'team_season_id': team_dict['TeamID'] + season * 10000000000,
               'season': season,
               'team_id': team_dict['TeamID'],
@@ -83,7 +83,6 @@ if __name__ == '__main__':
 
     standings_generator = NBAEndpoint(endpoint='leaguestandingsv3')
 
-    # pick up date range from parameters
     season_range = pd.Series(range(START_SEASON, END_SEASON + 1))
 
     all_standings_data()
@@ -92,7 +91,6 @@ if __name__ == '__main__':
     connection.execute(query)
     connection.execute('COMMIT')
 
-    # return to regular output writing
     sys.stdout.write('\n')
 
     print(Colour.green + f'Table {TARGET_TABLE} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))

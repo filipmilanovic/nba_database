@@ -143,13 +143,10 @@ if __name__ == '__main__':
     seasons_teams_generator = NBAEndpoint(endpoint='commonteamyears')
     team_generator = NBAEndpoint(endpoint='teaminfocommon')
 
-    # get list of team_id and season pairs
     seasons_teams = get_seasons_teams()
 
-    # get team information by season
     get_teams(seasons_teams)
 
-    # return to regular output writing
     sys.stdout.write('\n')
 
     print(Colour.green + f'Table {TARGET_TABLE} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))

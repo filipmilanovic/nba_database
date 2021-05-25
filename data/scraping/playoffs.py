@@ -1,4 +1,3 @@
-## ADD PLAY-IN INFORMATION
 from data import *
 
 
@@ -15,7 +14,6 @@ def get_season_data(iteration: int):
 
     season = season_range[iteration]
 
-    # get game logs
     generate_playoffs_json(season)
     series_logs = get_series_logs(playoffs_generator.response, season)
 
@@ -99,7 +97,6 @@ if __name__ == '__main__':
 
     playoffs_generator = NBAEndpoint(endpoint='playoffbracket')
 
-    # pick up date range from parameters
     season_range = pd.Series(range(START_SEASON, END_SEASON + 1))
 
     all_playoffs_data()
@@ -108,7 +105,6 @@ if __name__ == '__main__':
     connection.execute(query)
     connection.execute('COMMIT')
 
-    # return to regular output writing
     sys.stdout.write('\n')
 
     print(Colour.green + f'Table {TARGET_TABLE} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))

@@ -1,4 +1,3 @@
-## ADD PLAY-IN INFORMATION
 from data import *
 
 
@@ -18,10 +17,8 @@ def get_season_data(iteration: int):
     generate_game_logs_json(season)
     generate_playoffs_json(season)
 
-    # clean raw game logs
     game_logs = get_game_logs(game_generator.response)
 
-    # clean game data for writing
     games = get_games(game_logs, season)
 
     status = write_data(engine, metadata, connection, games, TARGET_TABLE, TABLE_PRIMARY_KEY)
@@ -79,15 +76,10 @@ def get_game_logs(json):
 
 def get_games(data: dict, season: int):
     """ convert game logs to final games table and exclude non-competitive games"""
+    # keep games if Regular Season (002), Playoffs (004) or Play-in (005)
     output = [get_game_data(game, season) for game in data
-              # remove All-Star teams and errors
-              if game['homeTeam']['teamId'] not in list(range(1610616800, 1610616900)) + [0]
-              # from season 2018 onwards, API returns regular season week number, and playoffs game number
-              and ((game['weekNumber'] > 0
-                    or game['seriesGameNumber'] != '')
-                   # before season 2018, a manual input dictionary for season start dates has been added
-                   or ((season <= 2017)
-                       and (get_home_time(game, season) >= get_season_start_date(season))))]
+              if game['gameId'][0:3] in ['002', '004', '005']
+              and game['gameStatus'] in [2, 3]]
 
     return output
 
@@ -111,7 +103,7 @@ def get_game_data(game_dict: dict, season: int):
               'away_score': game_dict['awayTeam']['score'],
               'overtime': get_ot_info(game_dict['gameStatusText']),
               'season': season,
-              'is_playoffs': (playoff_info['GAME_ID'] is not None) * 1,
+              'game_type': playoff_designation[game_dict['gameId'][0:3]],
               'series_id': playoff_info['SERIES_ID'],
               'series_game': playoff_info['GAME_NUM']
               }
@@ -126,6 +118,7 @@ def get_playoff_info(game_dict: dict):
     rows = data['rowSet']
     game_id_loc = columns.index('GAME_ID')
 
+    # initialise output to pass key:None values as default
     output = dict.fromkeys(columns)
 
     dict_generator = (row for row in rows if row[game_id_loc] == game_dict['gameId'])
@@ -173,16 +166,6 @@ def get_home_time(game_dict: dict, season: int):
     return output
 
 
-def get_season_start_date(season: int):
-    """ get the season start date, or set to start of year to avoid equation errors """
-    try:
-        output = season_start_dates[season]
-    except KeyError:
-        output = dt.datetime(season, 1, 1)
-
-    return output
-
-
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(MYSQL_DATABASE)
     create_table_games(engine, metadata)
@@ -194,7 +177,6 @@ if __name__ == '__main__':
     game_generator = NBAEndpoint(endpoint='scheduleLeaguev2')
     playoffs_generator = NBAEndpoint(endpoint='commonplayoffseries')
 
-    # pick up date range from parameters
     season_range = pd.Series(range(START_SEASON, END_SEASON + 1))
 
     all_games_data()
@@ -203,7 +185,6 @@ if __name__ == '__main__':
     connection.execute(query)
     connection.execute('COMMIT')
 
-    # return to regular output writing
     sys.stdout.write('\n')
 
     print(Colour.green + f'Table {TARGET_TABLE} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))

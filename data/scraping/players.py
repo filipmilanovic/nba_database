@@ -16,7 +16,6 @@ def get_players_data():
 
 def generate_players_json():
     """ get all player data for a given season """
-    # build parameters for season request
     parameters_players = get_request_parameters()
     player_generator.send_request(parameters_players)
 
@@ -31,6 +30,7 @@ def get_request_parameters():
 
 
 def clean_players_data(data_dict: dict):
+    """ iterate through player information and clean """
     columns = data_dict['headers']
     rows = data_dict['rowSet']
 
@@ -40,6 +40,7 @@ def clean_players_data(data_dict: dict):
 
 
 def get_player_dict(columns: list, data: list):
+    """ take list of keys and values, then output cleaned dict"""
     player_info = dict(zip(columns, data))
     output = {'player_id': player_info['PERSON_ID'],
               'player_name': player_info['PLAYER_FIRST_NAME'] + ' ' + player_info['PLAYER_LAST_NAME'],
@@ -54,6 +55,7 @@ def get_player_dict(columns: list, data: list):
 
 
 def get_height(height: str):
+    """ convert height from ft-inch to cm"""
     try:
         inches = int(re.search(r'(\d)-', height).group(1))*12 + int(re.search(r'-(\d+)', height).group(1))
         output = int(inches*2.54)
@@ -64,6 +66,7 @@ def get_height(height: str):
 
 
 def get_weight(weight: int):
+    """ convert weight from lbs to kgs """
     try:
         output = int(int(weight)/2.205)
     except (TypeError, ValueError):
@@ -87,7 +90,6 @@ if __name__ == '__main__':
 
     write_data(engine, metadata, connection, players_data, TARGET_TABLE, TABLE_PRIMARY_KEY)
 
-    # return to regular output writing
     sys.stdout.write('\n')
 
     print(Colour.green + f'Table {TARGET_TABLE} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))

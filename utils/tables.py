@@ -16,7 +16,7 @@ def create_table_games(engine, metadata):
                   sql.Column('away_score', sql.SMALLINT),
                   sql.Column('overtime', sql.VARCHAR(3)),
                   sql.Column('season', sql.SMALLINT),
-                  sql.Column('is_playoffs', sql.SMALLINT),
+                  sql.Column('game_type', sql.SMALLINT),
                   sql.Column('series_id', sql.VARCHAR(9)),
                   sql.Column('series_game', sql.SMALLINT),
                   sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))

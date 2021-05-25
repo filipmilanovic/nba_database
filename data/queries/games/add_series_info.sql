@@ -12,7 +12,7 @@ with seeds as (
 	inner join nba.teams th on sh.team_season_id = th.team_season_id
     inner join nba.teams ta on sa.team_season_id = ta.team_season_id
 	where series_id is null
-      and is_playoffs = 1
+      and game_type = 2
 	order by game_id
 ),
 -- define the playoff round for each game

@@ -40,7 +40,6 @@ if __name__ == '__main__':
     TARGET_TABLE = 'transactions'
     TABLE_PRIMARY_KEY = 'transaction_id'
 
-    # get transaction url
     url = 'https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json'
 
     transactions_data = get_transactions_data()
