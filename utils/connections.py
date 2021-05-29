@@ -6,7 +6,7 @@ from utils.environment import *
 from utils.functions import get_distinct_ids
 from utils.params import AS_UPSERT
 from sqlalchemy.exc import ProgrammingError
-
+import time
 
 def get_connection(db: str):
     """ set up MySQL connection """
@@ -107,7 +107,6 @@ def check_db_duplicates(data,
         # find rows where data already exists in DB
         selectable = get_column_query(metadata, engine, target_table, target_key)
         skip = pd.read_sql(sql=selectable, con=connection)[target_key].tolist()
-
         if use_headers:
             # get location for key in each row of data
             headers = data['headers']
@@ -116,7 +115,9 @@ def check_db_duplicates(data,
 
             data['rowSet'] = [row for row in rows if str(row[header_loc]) not in skip]
         else:
-            data = [row for row in data if row[data_key] not in skip]
+            # data frame conversion helps with speed for larger checks
+            check_keys = pd.DataFrame(data)
+            data = check_keys[~check_keys[data_key].isin(skip)].to_dict(orient='records')
 
     output = data
 

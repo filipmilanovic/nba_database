@@ -134,3 +134,9 @@ def get_hash(obj, length: int):
     output = hash_obj.hexdigest()[0:length]
 
     return output
+
+
+def get_season_text(season: int):
+    output = f'{season-1}-{"{:02d}".format(season-2000+(season<2000)*100)}'
+
+    return output

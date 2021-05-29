@@ -82,7 +82,7 @@ def get_series_id(series_id: str, high_team_id: str, low_team_id: str, season: i
     else:
         remove_team_id = series_id.replace('0000000000', '')
     # commonplayoffseries returns something like 004190010, while playoffbracket returns something like 004201910
-    fixed_season = remove_team_id.replace(str(season - 1), f'{"{:02d}".format(season-2001)}00')
+    fixed_season = remove_team_id.replace(str(season - 1), f'{"{:02d}".format(season-2001+(season<2001)*100)}00')
     output = fixed_season.replace('_', '')
 
     return output

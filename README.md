@@ -51,9 +51,8 @@ writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
 from a static [NBA_Player_Movement](https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json) file and
 writes to `nba.transactions` (instant)
 
-[scraping.games_lineups](data/scraping/games_lineups.py) - this goes through the box score for each game in
-`nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to
-`nba.games_lineups` in the DB. (~2 hours)
+[scraping.lineups](data/scraping/lineups.py) - gets all player logs from `playergamelogs`, then inserts them into
+`nba.lineups` (~10 seconds)
 
 [scraping.plays_raw.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
 Basketball Reference for all games that appear within both the nba.games table, and the date range defined in
@@ -87,6 +86,8 @@ occur. (~45 minutes)
   
 * Fix performance testing in [performance.py](utils/performance.py)
   
+* Find solution for starter/bench designation in [scraping.lineups](data/scraping/lineups.py)
+
 * Re-do betting odds scraping
   
 * Add ejections to [cleaning.plays.py](data/cleaning/plays.py)

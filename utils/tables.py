@@ -37,13 +37,14 @@ def create_table_games(engine, metadata):
         metadata.create_all()
 
 
-def create_table_games_lineups(engine, metadata):
-    if not engine.dialect.has_table(engine, 'games_lineups'):
-        sql.Table('games_lineups', metadata,
+def create_table_lineups(engine, metadata):
+    if not engine.dialect.has_table(engine, 'lineups'):
+        sql.Table('lineups', metadata,
+                  sql.Column('lineup_id', sql.VARCHAR(17), primary_key=True),
                   sql.Column('game_id', sql.VARCHAR(12), index=True, nullable=False),
-                  sql.Column('team_id', sql.VARCHAR(3)),
+                  sql.Column('team_id', sql.INT),
                   sql.Column('player_id', sql.VARCHAR(9)),
-                  sql.Column('role', sql.VARCHAR(7)),
+                  sql.Column('seconds', sql.SMALLINT),
                   sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
         metadata.create_all()
 
