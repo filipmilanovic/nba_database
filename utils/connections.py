@@ -73,10 +73,13 @@ def get_table_query(metadata, engine, name, column, cond):
     return output
 
 
-def get_column_query(metadata, engine, name, column):
+def get_column_query(metadata, engine, name, column, cond_col=None, cond_val=None):
     metadata.reflect(bind=engine)
     table = metadata.tables[name]
-    output = sql.sql.select([table.c[column]]).distinct()
+    if cond_col:
+        output = sql.sql.select([table.c[column]]).where(table.c[cond_col].in_(cond_val)).distinct()
+    else:
+        output = sql.sql.select([table.c[column]]).distinct()
     return output
 
 
