@@ -2,15 +2,20 @@ playoff_designation = {'002': 0,  # Regular Season
                        '004': 2,  # Playoffs
                        '005': 1}  # Play-In Tournament
 
-foul_types = {'S': 'Shooting',
-              'P': 'Personal',
+foul_types = {'C.P': 'Clear Path',
+              'D': 'Defensive 3 second',
+              'IN': 'Reach-in',
               'L.B': 'Loose Ball',
               'OFF': 'Offensive',
+              'P': 'Personal',
+              'S': 'Shooting',
               'T': 'Technical',
-              'D': 'Defensive 3 second',
-              'C.P': 'Clear Path',
-              'HANGING.TECH': 'Hanging Technical',
+              'AWAY.FROM.PLAY': 'Away From Play',
+              'ELBOW': 'Elbowing',
               'FLAGRANT': 'Flagrant',
+              'HANGING.TECH': 'Hanging Technical',
+              'Non-Unsportsmanlike': 'Unsportsmanlike',
+              'PUNCH': 'Punching',
               'Team': 'Team'}
 
 none_zero = {0: None}

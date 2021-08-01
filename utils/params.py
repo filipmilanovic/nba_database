@@ -10,4 +10,4 @@ start_date_plays = dt(2000, 7, 1)
 end_date_plays = dt(2020, 10, 12)
 
 # Control whether to skip or replace cases that are already in DB
-AS_UPSERT = True
+AS_UPSERT = False

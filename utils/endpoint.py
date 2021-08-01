@@ -9,9 +9,17 @@ class NBAEndpoint:
     def __init__(self,
                  endpoint: str):
         self.endpoint = endpoint
-        self.session = r.session()
-        self.session.headers.update(nba_headers)
+        self.session = self.start_session()
+        self.tries = 3
         self.response = None
+
+    def start_session(self):
+        if 'self.session' in locals():
+            self.close_session()
+        session = r.session()
+        session.headers.update(nba_headers)
+
+        return session
 
     def send_request(self,
                      parameters: dict):
@@ -19,7 +27,17 @@ class NBAEndpoint:
         parameters_string = get_parameters_string(parameters)
         url = f'https://stats.nba.com/stats/{self.endpoint}/?{parameters_string}'
 
-        self.response = self.session.get(url).json()
+        self.tries = 3
+
+        while self.tries > 0:
+            try:
+                self.response = self.session.get(url, timeout=10).json()
+                self.tries = 0
+            except r.exceptions.ConnectTimeout:
+                # restart Session and retry if time-out
+                self.start_session()
+                self.tries -= 1
+                continue
 
     def close_session(self):
         self.session.close()

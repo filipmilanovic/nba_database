@@ -55,13 +55,8 @@ writes to `nba.transactions` (instant)
 `nba.lineups` (~10 seconds)
 
 [scraping.plays_raw.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
-Basketball Reference for all games that appear within both the nba.games table, and the date range defined in
-[params.py](utils/params.py), then writes the data to `nba_raw.plays_raw` in the DB. (~2 hours)
-
-[cleaning.plays.py](data/cleaning/plays.py) - this applies logic to all raw play by play rows in
-`nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
-becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes the data to `nba.plays` in the DB.
-(~1 hour)
+`playbyplayv2` for all game_id that appear within both the nba.games table, and the date range defined in
+[params.py](utils/params.py), then writes the data to `nba.plays`. (20 minutes)
 
 [cleaning.plays_players.py](data/cleaning/plays_players.py) - this figures out which players were on the
 court at any point in time.  Basketball Reference doesn't show substitutions at quarter/half breaks, so this looks
@@ -84,29 +79,23 @@ occur. (~45 minutes)
 * Write cleaning.game_logs.py script to create a nicer dataset for predictive
   analysis
   
+* Set up look-up table for EVENTMSGACTIONTYPE (for shots, where EVENTMSGTYPE == 1)
+  
 * Fix performance testing in [performance.py](utils/performance.py)
   
-* Find solution for starter/bench designation in [scraping.lineups](data/scraping/lineups.py)
+* Find solution for Starter/Bench/DNP designation in [scraping.lineups](data/scraping/lineups.py)
 
 * Re-do betting odds scraping
-  
-* Add ejections to [cleaning.plays.py](data/cleaning/plays.py)
   
 * Access [NBA stats](http://stats.nba.com) for shot information (location, type, defenders)
 
 * Set up central control to build dataset from one script
   
-* Move scraping to use [nba.com](http://nba.com) - this is likely to be slower, but should be more accurate, so I manual fixes
-can be reduced and is probably also a bit more 'official'
-
 * Set up automated daily ingestion of data
-
-* Convert `get_session` and pre-execution table clearing/iteration skipping into a
-  [function](utils/functions.py)
   
 * Set up API to access database from Python
 
 * Set up UI for exploration of data
 
 ### Bug Log
-
+* Missing Taunting in [cleaning.plays.py](data/cleaning/plays.py)
