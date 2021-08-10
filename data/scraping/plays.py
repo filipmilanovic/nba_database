@@ -46,6 +46,7 @@ def get_game_plays(json):
     columns = json['headers']
     rows = json['rowSet']
 
+    # each play is checked for a 'paired' event, which is then added as a subsequent play
     play_list = [play for plays in [add_paired_event([dict(zip(columns, row))]) for row in rows] for play in plays]
 
     output = [get_clean_play(play_list[play], play_list[play-1], play) for play in range(len(play_list))]
@@ -62,7 +63,7 @@ def add_paired_event(play: list):
 
     # there is only one home or away event
     if len([event for event in [home_event, away_event] if event]) == 1:
-        # the 'secondary' event types are Assist
+        # the 'secondary' event types are Assists
         if 'AST' in (home_event or away_event).upper():
             output = get_assist_event(play_dict, home_event)
         else:
@@ -76,8 +77,10 @@ def add_paired_event(play: list):
             output = play
     # there is both a home and an away event
     else:
+        # ignore if bad data
         if not home_event and not away_event:
             output = []
+        # the event types are block/miss and steal/turnover
         elif any(play_type in home_event.upper() for play_type in ['BLOCK', 'STEAL']):
             fix_team_1 = 'home'
             fix_team_2 = 'visitor'
@@ -149,7 +152,7 @@ def get_clean_play(play: dict, previous_play: dict, play_number: int):
     """ convert raw play dict into a cleaned play dict """
     event_info = get_event_info(play, previous_play)
 
-    # check if latest information has been initialised then set as global variables
+    # check if latest information has been initialised and set as global variables if not
     if 'latest_game_id' not in globals():
         global latest_game_id
         latest_game_id = play['GAME_ID']
@@ -157,6 +160,7 @@ def get_clean_play(play: dict, previous_play: dict, play_number: int):
         global latest_score
         latest_score = '0 - 0'
 
+    # reset the game score where current play game_id has changed
     if play['GAME_ID'] != latest_game_id:
         latest_game_id = play['GAME_ID']
         latest_score = '0 - 0'
@@ -188,76 +192,80 @@ def get_event_info(play_dict: dict, previous_play_dict: dict):
               'value': 0,
               'detail': ''}
 
-    if 'PTS' in play:
+    if 'PTS' in play:  # shot makes
         shot_info = get_shot_info(play, play_dict['EVENTMSGACTIONTYPE'])
         output = {'name': f'{shot_info["shot_type"]} Make',
                   'value': shot_info['shot_value'],
                   'detail': shot_info['shot_detail'],
                   'possession': shot_info['possession']}
-    elif 'AST' in play:
+    elif 'AST' in play:  # assists
         output = {'name': 'Assist',
                   'value': 1,
                   'detail': play_dict['PLAYER2_ID']}
-    elif 'MISS' in play:
+    elif 'MISS' in play:  # shot misses
         shot_info = get_shot_info(play, play_dict['EVENTMSGACTIONTYPE'])  # EVENTMSGTYPE == 1
         output = {'name': f'{shot_info["shot_type"]} Miss',
                   'value': shot_info['shot_value'],
                   'detail': shot_info['shot_detail'],
                   'possession': shot_info['possession']}
-    elif any(event in play for event in ['REBOUND', 'Rebound']):
+    elif any(event in play for event in ['REBOUND', 'Rebound']):  # rebound
         rebound_info = get_rebound_info(play_dict, previous_play_dict)
         output = {'name': f'{rebound_info["event_type"]} Rebound',
                   'value': 1,
                   'detail': rebound_info['shooter']}
-    elif 'Turnover' in play:
+    elif 'Turnover' in play:  # turnovers
         output = {'name': 'Turnover',
                   'value': 1,
                   'detail': play_dict['EVENTMSGACTIONTYPE'],  # EVENTMSGTYPE == 5
                   'possession': 1}
-    elif any(event in play for event in ['FOUL', 'Foul']):
+    elif any(event in play for event in ['FOUL', 'Foul', 'Unsportsmanlike']):  # fouls
         output = {'name': 'Foul',
                   'value': 1,
                   'detail': f'{get_foul_type(play, play_dict)}'}
-    elif 'SUB' in play:
+    elif 'SUB' in play:  # substitutions
         output = {'name': 'Substitution',
                   'value': 1,
                   'detail': play_dict['PLAYER2_ID']}
-    elif 'Timeout' in play:
+    elif 'Timeout' in play:  # timeouts
         output = {'name': 'Timeout',
                   'value': 1,
                   'detail': f'{get_timeout_type(play)}'}
-    elif 'BLOCK' in play:
+    elif 'BLOCK' in play:  # blocks
         output = {'name': 'Block',
                   'value': 1,
                   'detail': play_dict['PLAYER2_ID']}
-    elif 'STEAL' in play:
+    elif 'STEAL' in play:  # steals
         output = {'name': 'Steal',
                   'value': 1,
                   'detail': play_dict['PLAYER2_ID']}
-    elif 'Violation' in play:
+    elif 'Violation' in play:  # violations
         output = {'name': 'Violation',
                   'value': 1,
                   'detail': get_violation_type(play)}
-    elif 'Start of' in play:
+    elif 'Start of' in play:  # period starts
         output = {'name': 'Period Start',
                   'value': None,
                   'detail': None}
-    elif 'End of' in play:
+    elif 'End of' in play:  # period ends
         output = {'name': 'Period End',
                   'value': None,
                   'detail': None}
-    elif 'Jump Ball' in play:
+    elif 'Jump Ball' in play:  # jump balls
         output = {'name': 'Jump Ball',
                   'value': 1,
                   'detail': play_dict['PLAYER2_ID']}
-    elif 'Ejection' in play:
+    elif 'Ejection' in play:  # ejections
         output = {'name': 'Ejection',
                   'value': None,
                   'detail': None}
-    elif 'Taunting' in play:
+    elif 'Taunting' in play:  # taunting technicals
         output = {'name': 'Taunting',
                   'value': None,
                   'detail': None}
+    elif play in ['Short', 'Regular']:  # bugged timeouts in endpoint
+        output = {'name': 'Timeout',
+                  'value': 1,
+                  'detail': play}
 
     return output
 
@@ -273,6 +281,7 @@ def get_shot_info(event: str, event_id: int):
                 possession = 1
             else:
                 possession = 0
+        # (\d) of (\d) sometimes doesn't exist where there is only 1 technical free throw
         except AttributeError:
             shot_detail = 1
             possession = 0
@@ -298,6 +307,7 @@ def get_rebound_info(play_dict: dict, previous_play_dict: dict):
     previous_play = previous_play_dict['HOMEDESCRIPTION'] or previous_play_dict['VISITORDESCRIPTION'] or previous_play_dict['NEUTRALDESCRIPTION']
 
     if 'MISS' in previous_play:
+        # TEAM_ID shows up as PLAYER_ID if it's a team rebound
         if (play_dict['PLAYER1_TEAM_ID'] or play_dict['PLAYER1_ID']) == previous_play_dict['PLAYER1_TEAM_ID']:
             event_type = 'Offensive'
         else:
@@ -331,6 +341,8 @@ def get_foul_type(event: str, play_dict: dict):
             foul_key = match.group(1)
         elif match := re.search(r'Foul: *([A-z-]+)', event):
             foul_key = match.group(1)
+        elif 'Non-Unsportsmanlike' in event:
+            foul_key = 'Non-Unsportsmanlike'
         else:
             print(event)
             print('FOUL NOT VALID')

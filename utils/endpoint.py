@@ -33,9 +33,9 @@ class NBAEndpoint:
             try:
                 self.response = self.session.get(url, timeout=10).json()
                 self.tries = 0
-            except r.exceptions.ConnectTimeout:
+            except (r.exceptions.ConnectTimeout, r.exceptions.ReadTimeout):
                 # restart Session and retry if time-out
-                self.start_session()
+                self.session = self.start_session()
                 self.tries -= 1
                 continue
 
