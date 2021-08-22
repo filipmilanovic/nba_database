@@ -80,6 +80,8 @@ occur. (~45 minutes)
   analysis
   
 * Set up look-up table for EVENTMSGACTIONTYPE (for shots, where EVENTMSGTYPE == 1)
+
+* Update query generators in [connections.py](utils/connections.py)
   
 * Fix performance testing in [performance.py](utils/performance.py)
   
@@ -97,5 +99,10 @@ occur. (~45 minutes)
 
 * Set up UI for exploration of data
 
-### Bug Log
-* Missing Taunting in [cleaning.plays.py](data/cleaning/plays.py)
+### Issue Log
+[cleaning.plays.py](data/cleaning/plays.py)
+* there are a large number of 'Instant Replay' events at the end of quarters
+* a handful of empty events in most seasons, mostly due to missing information (e.g. team/player/event) - there don't
+appear to be any consistent rules that can be applied to fix these
+* there are some inconsistencies between points scored from plays and points from `nba.games`, although these issues
+appear to come from the nba endpoints

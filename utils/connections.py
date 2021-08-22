@@ -6,7 +6,7 @@ from utils.environment import *
 from utils.functions import get_distinct_ids
 from utils.params import AS_UPSERT
 from sqlalchemy.exc import ProgrammingError
-import time
+
 
 def get_connection(db: str):
     """ set up MySQL connection """
