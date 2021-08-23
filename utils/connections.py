@@ -10,8 +10,13 @@ from sqlalchemy.exc import ProgrammingError
 
 def get_connection(db: str):
     """ set up MySQL connection """
+    mysql_user = os.environ['MYSQL_USER']
+    mysql_pass = os.environ['MYSQL_PASSWORD']
+    mysql_host = os.environ['MYSQL_HOST']
+    mysql_port = os.environ['MYSQL_PORT']
+
     try:
-        eng = sql.create_engine(f'mysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{db}?charset=utf8mb4')
+        eng = sql.create_engine(f'mysql://{mysql_user}:{mysql_pass}@{mysql_host}:{mysql_port}/{db}?charset=utf8mb4')
         conn = eng.connect()
         meta = sql.MetaData(eng)
         print(Colour.green + f'Established SQL connection to {db} schema' + Colour.end)
@@ -119,7 +124,10 @@ def check_db_duplicates(data,
             data['rowSet'] = [row for row in rows if str(row[header_loc]) not in skip]
         else:
             # data frame conversion helps with speed for larger checks
-            check_keys = pd.DataFrame(data)
+            data_frame = pd.DataFrame(data)
+
+            # ensures null values all as None, as MySQL can't take nan
+            check_keys = data_frame.where(pd.notnull(data_frame), None)
             data = check_keys[~check_keys[data_key].isin(skip)].to_dict(orient='records')
 
     output = data

@@ -35,7 +35,7 @@ in 2001, so a [query](data/queries/standings/fix_seeds.sql) is run to correct it
 
 [scraping.games.py](data/scraping/games.py) - gets game data from `scheduleLeaguev2` and writes the data to
 `nba.games`.  Playoff series identifiers are grabbed from `commonplayoffseries`, although this is incomplete from 2001
-and earlier, so a [query](data/queries/games/add_series_info.sql) is run to populate the missing data (2 seconds)
+and earlier, so a [query](data/queries/games/add_series_info.sql) is run to populate the missing data (10 seconds)
 
 [scraping.playoffs.py](data/scraping/playoffs.py) - accesses playoff series information from `playoffbracket` and
 writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
@@ -52,9 +52,9 @@ from a static [NBA_Player_Movement](https://stats.nba.com/js/data/playermovement
 writes to `nba.transactions` (instant)
 
 [scraping.lineups](data/scraping/lineups.py) - gets all player logs from `playergamelogs`, then inserts them into
-`nba.lineups` (~10 seconds)
+`nba.lineups` (10 seconds)
 
-[scraping.plays_raw.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
+[scraping.plays.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
 `playbyplayv2` for all game_id that appear within both the nba.games table, and the date range defined in
 [params.py](utils/params.py), then writes the data to `nba.plays`. (20 minutes)
 

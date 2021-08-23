@@ -74,7 +74,7 @@ def get_standings_data(team_dict: dict, season: int):
 
 
 if __name__ == '__main__':
-    engine, metadata, connection = get_connection(MYSQL_DATABASE)
+    engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
     create_table_standings(engine, metadata)
 
     TARGET_TABLE = 'standings'

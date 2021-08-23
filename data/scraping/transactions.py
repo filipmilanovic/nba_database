@@ -34,7 +34,7 @@ def get_transaction_data(transaction: dict):
 
 
 if __name__ == '__main__':
-    engine, metadata, connection = get_connection(MYSQL_DATABASE)
+    engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
     create_table_transactions(metadata)
 
     TARGET_TABLE = 'transactions'
