@@ -26,39 +26,39 @@ The following scripts access [stats.nba.com](stats.nba.com) endpoints within the
 [params.py](utils/params.py).  These scripts should be run in the following order to most completely develop the
 corresponding tables in the DB (approximate time per season in brackets):
 
-[scraping.teams.py](data/scraping/teams.py) - gets the team data from `commonteamyears` and `teaminfocommon` and writes
+[scraping.teams.py](data/endpoint/teams.py) - gets the team data from `commonteamyears` and `teaminfocommon` and writes
 to `nba.teams` (30 seconds)
 
-[scraping.standings.py](data/scraping/standings.py) - gets the season-by-season record and standings data from
+[scraping.standings.py](data/endpoint/standings.py) - gets the season-by-season record and standings data from
 `leaguestandingsv3` and writes to `nba.standings`.  There is an issue with two teams ranked as the 5th seed in the West
-in 2001, so a [query](data/queries/standings/fix_seeds.sql) is run to correct it (1 second)
+in 2001, so a [query](data/query/standings/fix_seeds.sql) is run to correct it (1 second)
 
-[scraping.games.py](data/scraping/games.py) - gets game data from `scheduleLeaguev2` and writes the data to
+[scraping.games.py](data/endpoint/games.py) - gets game data from `scheduleLeaguev2` and writes the data to
 `nba.games`.  Playoff series identifiers are grabbed from `commonplayoffseries`, although this is incomplete from 2001
-and earlier, so a [query](data/queries/games/add_series_info.sql) is run to populate the missing data (10 seconds)
+and earlier, so a [query](data/query/games/add_series_info.sql) is run to populate the missing data (10 seconds)
 
-[scraping.playoffs.py](data/scraping/playoffs.py) - accesses playoff series information from `playoffbracket` and
+[scraping.playoffs.py](data/endpoint/playoffs.py) - accesses playoff series information from `playoffbracket` and
 writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
-[query](data/queries/playoffs/add_teams_info.sql) is run to populate missing data (1 seconds)
+[query](data/query/playoffs/add_teams_info.sql) is run to populate missing data (1 seconds)
 
-[scraping.players.py](data/scraping/players.py) - gets all player information from `playerindex` and populates
+[scraping.players.py](data/endpoint/players.py) - gets all player information from `playerindex` and populates
 `nba.players` (instant)
 
-[scraping.draft.py](data/scraping/draft.py) - gets all draft information from `drafthistory` and populates
+[scraping.draft.py](data/endpoint/draft.py) - gets all draft information from `drafthistory` and populates
 `nba.draft` (instant)
 
-[cleaning.transactions.py](data/scraping/transactions.py) - gets player transaction json with data from 2015 onwards
+[cleaning.transactions.py](data/endpoint/transactions.py) - gets player transaction json with data from 2015 onwards
 from a static [NBA_Player_Movement](https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json) file and
 writes to `nba.transactions` (instant)
 
-[scraping.lineups](data/scraping/lineups.py) - gets all player logs from `playergamelogs`, then inserts them into
+[scraping.lineups](data/endpoint/lineups.py) - gets all player logs from `playergamelogs`, then inserts them into
 `nba.lineups` (10 seconds)
 
-[scraping.plays.py](data/scraping/plays.py) - this scrapes the raw play-by-play rows from
+[scraping.plays.py](data/endpoint/plays.py) - this scrapes the raw play-by-play rows from
 `playbyplayv2` for all game_id that appear within both the nba.games table, and the date range defined in
 [params.py](utils/params.py), then writes the data to `nba.plays`. (20 minutes)
 
-[cleaning.plays_players.py](data/cleaning/plays_players.py) - this figures out which players were on the
+[cleaning.plays_players.py](data/operation/plays_players.py) - this figures out which players were on the
 court at any point in time.  Basketball Reference doesn't show substitutions at quarter/half breaks, so this looks
 through plays in each quarter, and figures out which players contributed/substituted.  In some cases, a player plays an
 entire quarter without any contributions, so the box scores are scraped to figure out where the minutes discrepancies
@@ -85,7 +85,7 @@ occur. (~45 minutes)
   
 * Fix performance testing in [performance.py](utils/performance.py)
   
-* Find solution for Starter/Bench/DNP designation in [scraping.lineups](data/scraping/lineups.py)
+* Find solution for Starter/Bench/DNP designation in [scraping.lineups](data/endpoint/lineups.py)
 
 * Re-do betting odds scraping
   
@@ -100,7 +100,7 @@ occur. (~45 minutes)
 * Set up UI for exploration of data
 
 ### Issue Log
-[cleaning.plays.py](data/cleaning/plays.py)
+[cleaning.plays.py](data/operation/plays.py)
 * there are a large number of 'Instant Replay' events at the end of quarters
 * a handful of empty events in most seasons, mostly due to missing information (e.g. team/player/event) - there don't
 appear to be any consistent rules that can be applied to fix these

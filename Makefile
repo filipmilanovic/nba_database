@@ -1,5 +1,5 @@
 database-down:
-	sudo docker-compose down
+	docker-compose down
 
 database-up:
-	sudo docker-compose up
+	docker-compose up

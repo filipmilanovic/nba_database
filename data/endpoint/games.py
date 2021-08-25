@@ -172,7 +172,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'games'
     TABLE_PRIMARY_KEY = 'game_id'
-    QUERY_PATH = f'{DATA_PATH}/queries/{TARGET_TABLE}/'
+    QUERY_PATH = f'{DATA_PATH}/query/{TARGET_TABLE}/'
 
     game_generator = NBAEndpoint(endpoint='scheduleLeaguev2')
     playoffs_generator = NBAEndpoint(endpoint='commonplayoffseries')

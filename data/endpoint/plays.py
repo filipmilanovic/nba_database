@@ -16,7 +16,7 @@ def all_play_data():
 
         progress(iteration=iteration,
                  iterations=len(game_ids),
-                 iteration_name=f'{game_id["game_id"]}',
+                 iteration_name=f'game_id {game_id["game_id"]}',
                  lapsed=time_lapsed(),
                  sql_status=status)
 

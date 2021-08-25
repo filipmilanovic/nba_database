@@ -1,6 +1,6 @@
-import pytest
+from tests import pytest
 
-from data.scraping.draft import get_draft_dict
+from data.endpoint.draft import get_draft_dict
 
 
 def test_get_draft_dict():
