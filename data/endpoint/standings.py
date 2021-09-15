@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'standings'
     TABLE_PRIMARY_KEY = 'team_season_id'
-    QUERY_PATH = f'{DATA_PATH}/query/{TARGET_TABLE}/'
+    QUERY_PATH = f'{ROOT_PATH}/queries/data/{TARGET_TABLE}/'
 
     standings_generator = NBAEndpoint(endpoint='leaguestandingsv3')
 

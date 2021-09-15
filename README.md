@@ -11,7 +11,8 @@ The project should now be set up and ready to run and interact with GitHub
 
 ### Set-up Instructions
 - Start Docker on your machine
-- In the terminal, run `docker compose up --build`, and wait for the MySQL database to be built
+- In the terminal, run `make database-up`, and wait for the MySQL database to be built
+- Remember to note down the randomly generated Root password
 - The database should now be available at [localhost:3308](http://localhost:3308), with PHPMyAdmin available at
 [localhost:8080](http://localhost:8080)
 
@@ -31,15 +32,15 @@ to `nba.teams` (30 seconds)
 
 [endpoint.standings.py](data/endpoint/standings.py) - gets the season-by-season record and standings data from
 `leaguestandingsv3` and writes to `nba.standings`.  There is an issue with two teams ranked as the 5th seed in the West
-in 2001, so a [query](data/query/standings/fix_seeds.sql) is run to correct it (1 second)
+in 2001, so a [query](queries/data/standings/fix_seeds.sql) is run to correct it (1 second)
 
 [endpoint.games.py](data/endpoint/games.py) - gets game data from `scheduleLeaguev2` and writes the data to
 `nba.games`.  Playoff series identifiers are grabbed from `commonplayoffseries`, although this is incomplete from 2001
-and earlier, so a [query](data/query/games/add_series_info.sql) is run to populate the missing data (10 seconds)
+and earlier, so a [query](queries/data/games/add_series_info.sql) is run to populate the missing data (10 seconds)
 
 [endpoint.playoffs.py](data/endpoint/playoffs.py) - accesses playoff series information from `playoffbracket` and
 writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
-[query](data/query/playoffs/add_teams_info.sql) is run to populate missing data (1 seconds)
+[query](queries/data/playoffs/add_teams_info.sql) is run to populate missing data (1 seconds)
 
 [endpoint.players.py](data/endpoint/players.py) - gets all player information from `playerindex` and populates
 `nba.players` (instant)
