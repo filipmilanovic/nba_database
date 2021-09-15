@@ -218,7 +218,7 @@ def get_event_info(play_dict: dict, previous_play_dict: dict):
                   'value': 1,
                   'detail': play_dict['EVENTMSGACTIONTYPE'],  # EVENTMSGTYPE == 5
                   'possession': 1}
-    elif any(event in play for event in ['FOUL', 'Foul', 'Unsportsmanlike']):  # fouls
+    elif any(event in play for event in ['FOUL', 'Foul', 'Unsportsmanlike', 'Excess Timeout']):  # fouls and techs
         output = {'name': 'Foul',
                   'value': 1,
                   'detail': f'{get_foul_type(play, play_dict)}'}
@@ -304,7 +304,9 @@ def get_shot_info(event: str, event_id: int):
 
 def get_rebound_info(play_dict: dict, previous_play_dict: dict):
     """ get the detail of a rebound """
-    previous_play = previous_play_dict['HOMEDESCRIPTION'] or previous_play_dict['VISITORDESCRIPTION'] or previous_play_dict['NEUTRALDESCRIPTION']
+    previous_play = previous_play_dict['HOMEDESCRIPTION']\
+        or previous_play_dict['VISITORDESCRIPTION']\
+        or previous_play_dict['NEUTRALDESCRIPTION']
 
     if 'MISS' in previous_play:
         # TEAM_ID shows up as PLAYER_ID if it's a team rebound
@@ -338,18 +340,25 @@ def get_foul_type(event: str, play_dict: dict):
         foul_key = 'Team'
     else:
         if match := re.search(r'([A-Z.]+)\.(FOUL|Foul)', event):
+            # for typical format 'Player *.FOUL'
             foul_key = match.group(1)
         elif match := re.search(r'Foul: *([A-z-]+)', event):
+            # for format 'Foul: *'
             foul_key = match.group(1)
-        elif 'Non-Unsportsmanlike' in event:
+        elif match := re.search(r'([\w]+) (FOUL|Foul)', event):
+            # match for format 'Player Long string Foul'
+            foul_key = match.group(1)
+        elif 'non-unsportsmanlike' in event.lower():
             foul_key = 'Non-Unsportsmanlike'
+        elif 'excess timeout' in event.lower():
+            foul_key = 'T'
         else:
             print(event)
             print('FOUL NOT VALID')
             foul_key = None
             exit()
 
-    output = foul_types[foul_key]
+    output = foul_types[foul_key.upper()]
 
     return output
 

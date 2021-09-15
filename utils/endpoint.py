@@ -31,7 +31,7 @@ class NBAEndpoint:
 
         while self.tries > 0:
             try:
-                self.response = self.session.get(url, timeout=10).json()
+                self.response = self.session.get(url, timeout=5).json()
                 self.tries = 0
             except (r.exceptions.ConnectTimeout, r.exceptions.ReadTimeout):
                 # restart Session and retry if time-out
