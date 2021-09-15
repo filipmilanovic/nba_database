@@ -5,7 +5,7 @@
 .idea/
 
 # files
-/data/test.py
+/**/test.py
 /**/debug.log
 /**/output/*.csv
 
@@ -15,3 +15,6 @@ venv/
 
 # local files
 database/
+
+# test files
+/**/.pytest_cache/

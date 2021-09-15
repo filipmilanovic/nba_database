@@ -1,10 +1,9 @@
-# DEFINING FUNCTIONS FOR USE IN PROJECT
-import pandas as pd
+from hashlib import sha256
+import pytz
 import sys
 import time
-from utils.connections import sql
-from utils.colours import *
-from sqlalchemy.exc import OperationalError, NoSuchTableError
+import us
+
 
 start_time = time.time()
 
@@ -23,103 +22,121 @@ def progress(iteration, iterations, iteration_name, lapsed, sql_status=''):
 
 def time_lapsed():
     return str('{0:.2f}'.format(time.time() - start_time))
+#
+#
+# #  Data cleaning functions
+# def left(x, length):
+#     return x[:length]
+#
+#
+# def right(x, length):
+#     return x[-length:]
+#
+#
+# def mid(x, start, length):
+#     return x[start:start+length]
+#
+#
+# def if_none(x, y):
+#     if x is None:
+#         output = y
+#     else:
+#         output = x
+#     return output
+#
+#
+# def find_occurrence(x, y, n):
+#     output = y.find(x)
+#     while output >= 0 and n > 1:
+#         output = y.find(x, output+len(x))
+#         n -= 1
+#     return output
+#
+#
+# def insert_row(df, index, values):
+#     # get rows from before desired index
+#     df_before = df[df.index < index]
+#
+#     # append the desired row
+#     df_before.loc[index] = values
+#
+#     # add 1 to index of rows after index
+#     df_after = df[df.index >= index]
+#     df_after.index += 1
+#
+#     # join together
+#     output = pd.concat((df_before, df_after))
+#
+#     return output
+#
+#
+# def swap_rows(df, i, j, direction):
+#     temp = df.loc[i].copy()
+#
+#     if direction == 'forward':
+#         for row in range(i, j):
+#             df.loc[row] = df.loc[row+1]
+#
+#         df.loc[j] = temp
+#
+#     elif direction == 'back':
+#         for row in reversed(range(j, i+1)):
+#             df.loc[row] = df.loc[row-1]
+#
+#         df.loc[j] = temp
+#
+#     return df, j
 
 
-# Load data
-def load_data(df, sql_engine, meta, chunk_size=None):
-    output = []
-    # try SQL, then try CSV
-    try:
-        df_sql = sql.Table(f'{df}', meta, autoload=True, autoload_with=sql_engine)
-        output = pd.read_sql(sql=sql.select([df_sql]), con=sql_engine, chunksize=chunk_size)
-        print(Colour.green + f'Loaded {df} from DB' + Colour.end)
-    except NoSuchTableError:
-        print(Colour.red + f'Table {df} does not exist in DB' + Colour.end)
-    except NameError:
-        print(Colour.red + f'Could not load table {df} from DB' + Colour.end)
-
-    return output
-
-
-# Write data
-def write_data(df,
-               name,
-               sql_engine,
-               db_schema,
-               if_exists='replace',
-               index=True):
-
-    # write to sql
-    try:
-        df.to_sql(name, con=sql_engine, schema=db_schema, if_exists=if_exists, index=index)
-        status_sql = Colour.green + 'DB (Success)' + Colour.end
-    except OperationalError:
-        status_sql = Colour.red + 'DB (Failed)' + Colour.end
-
-    status = {"sql": status_sql}
-
-    return status
-
-
-#  Data cleaning functions
-def left(x, length):
-    return x[:length]
-
-
-def right(x, length):
-    return x[-length:]
-
-
-def mid(x, start, length):
-    return x[start:start+length]
-
-
-def if_none(x, y):
-    if x is None:
-        output = y
-    else:
-        output = x
-    return output
-
-
-def find_occurrence(x, y, n):
-    output = y.find(x)
-    while output >= 0 and n > 1:
-        output = y.find(x, output+len(x))
-        n -= 1
-    return output
-
-
-def insert_row(df, index, values):
-    # get rows from before desired index
-    df_before = df[df.index < index]
-
-    # append the desired row
-    df_before.loc[index] = values
-
-    # add 1 to index of rows after index
-    df_after = df[df.index >= index]
-    df_after.index += 1
-
-    # join together
-    output = pd.concat((df_before, df_after))
+def get_parameters_string(param_dict: dict):
+    """ take dictionary of parameters and convert to string to add to URL """
+    param_list = [f'{i}={param_dict[i]}' for i in list(param_dict.keys())]
+    output = '&'.join(param_list).replace(' ', '+')
 
     return output
 
 
-def swap_rows(df, i, j, direction):
-    temp = df.loc[i].copy()
+def get_sleep_time(iteration_start_time, target_duration):
+    """ get duration of an iteration, then wait until target time reached """
+    target_time = iteration_start_time + target_duration
+    sleep_time = target_time - time.time()
+    output = max(sleep_time, 0)
 
-    if direction == 'forward':
-        for row in range(i, j):
-            df.loc[row] = df.loc[row+1]
+    return output
 
-        df.loc[j] = temp
 
-    elif direction == 'back':
-        for row in reversed(range(j, i+1)):
-            df.loc[row] = df.loc[row-1]
+def convert_timezone(utc_time, state: str):
+    """ convert a utc timezone to a timezone based on the desired US state (two-letter abbreviation) """
+    new_tz = get_timezone(state).time_zones[0]
+    output = utc_time.replace(tzinfo=pytz.utc).astimezone(pytz.timezone(new_tz)).replace(tzinfo=None)
 
-        df.loc[j] = temp
+    return output
 
-    return df, j
+
+def get_timezone(state: str):
+    """ get the name of a timezone for a given US state """
+    output = us.states.lookup(state)
+
+    return output
+
+
+def get_distinct_ids(data: list, key: str):
+    """ return the distinct values of a desired key in a list of dictionaries """
+    output = [row[key] for row in data]
+
+    return output
+
+
+def get_hash(obj, length: int):
+    bytes_obj = obj.encode('utf-8')
+    hash_obj = sha256()
+    hash_obj.update(bytes_obj)
+    output = hash_obj.hexdigest()[0:length]
+
+    return output
+
+
+def get_season_text(season: int):
+    output = f'{season-1}-{"{:02d}".format(season-2000+(season<2000)*100)}'
+
+    return output

@@ -21,43 +21,47 @@ By default, this project has been set up to work with MySQL databases.  All the 
 
 The connection parameters can be adjusted at [environment.py](utils/environment.py).
 
-The `write_data`, `load_data` and `initialise_df` functions have been defined at
-[functions.py](utils/functions.py) and will need to be adjusted  if another DB is to be used.
-
 #### Data Scraping and Cleaning
-To ensure everything runs smoothly, the modules should be run in the following order:
+The following scripts access [stats.nba.com](stats.nba.com) endpoints within the date range defined in
+[params.py](utils/params.py).  These scripts should be run in the following order to most completely develop the
+corresponding tables in the DB (approximate time per season in brackets):
 
-[cleaning.teams.py](data/cleaning/teams.py) - this automatically writes all team data defined in
-[classes.py](utils/classes.py) to `nba.teams` in the DB. (Instant)
+[endpoint.teams.py](data/endpoint/teams.py) - gets the team data from `commonteamyears` and `teaminfocommon` and writes
+to `nba.teams` (30 seconds)
 
-[scraping.games.py](data/scraping/games.py) - this scrapes daily score data from Basketball Reference 
-within the date range defined in [params.py](utils/params.py) and writes the data to `nba.games` in the DB.
-(~30 seconds)
+[endpoint.standings.py](data/endpoint/standings.py) - gets the season-by-season record and standings data from
+`leaguestandingsv3` and writes to `nba.standings`.  There is an issue with two teams ranked as the 5th seed in the West
+in 2001, so a [query](data/query/standings/fix_seeds.sql) is run to correct it (1 second)
 
-[scraping.game_lineups](data/scraping/games_lineups.py) - this goes through the box score for each game in
-`nba.games` and scrapes the lineups for each time, denoting Starters, Bench, and DNP, then writes the data to
-`nba.games_lineups` in the DB. (~2 hours)
+[endpoint.games.py](data/endpoint/games.py) - gets game data from `scheduleLeaguev2` and writes the data to
+`nba.games`.  Playoff series identifiers are grabbed from `commonplayoffseries`, although this is incomplete from 2001
+and earlier, so a [query](data/query/games/add_series_info.sql) is run to populate the missing data (10 seconds)
 
-[scraping.players.py](data/scraping/players.py) - this pulls the entire roster for each game-season
-combination in the `nba.games`, then scrapes information about each player in the list, then writes the data to
-`nba.players` in the DB. (~5 minutes)
+[endpoint.playoffs.py](data/endpoint/playoffs.py) - accesses playoff series information from `playoffbracket` and
+writes the data to `nba.playoffs`.  The data is only tidy from 2020, so a
+[query](data/query/playoffs/add_teams_info.sql) is run to populate missing data (1 seconds)
 
-[scraping.plays_raw.py](data/scraping/plays_raw.py) - this scrapes the raw play-by-play rows from
-Basketball Reference for all games that appear within both the nba.games table, and the date range defined in
-[params.py](utils/params.py), then writes the data to `nba_raw.plays_raw` in the DB. (~2 hours)
+[endpoint.players.py](data/endpoint/players.py) - gets all player information from `playerindex` and populates
+`nba.players` (instant)
 
-[cleaning.plays.py](data/cleaning/plays.py) - this applies logic to all raw play by play rows in
-`nba_raw.plays_raw` to clean and isolate each individual statistic that happens in a game (e.g. one FGA row
-becomes multiple rows; FGA, FG Miss/Make, Assist, Block, Rebound), then writes the data to `nba.plays` in the DB.
-(~1 hour)
+[endpoint.draft.py](data/endpoint/draft.py) - gets all draft information from `drafthistory` and populates
+`nba.draft` (instant)
 
-[cleaning.plays_players.py](data/cleaning/plays_players.py) - this figures out which players were on the
-court at any point in time.  Basketball Reference doesn't show substitutions at quarter/half breaks, so this looks
-through plays in each quarter, and figures out which players contributed/substituted.  In some cases, a player plays an
-entire quarter without any contributions, so the box scores are scraped to figure out where the minutes discrepancies
-occur. (~45 minutes)
+[endpoint.transactions.py](data/endpoint/transactions.py) - gets player transaction json with data from 2015 onwards
+from a static [NBA_Player_Movement](https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json) file and
+writes to `nba.transactions` (instant)
+
+[endpoint.lineups](data/endpoint/lineups.py) - gets all player logs from `playergamelogs`, then inserts them into
+`nba.lineups` (10 seconds)
+
+[endpoint.plays.py](data/endpoint/plays.py) - this scrapes the raw play-by-play rows from
+`playbyplayv2` for all game_id that appear within both the nba.games table, and the date range defined in
+[params.py](utils/params.py), then writes the data to `nba.plays`. (20 minutes)
+
+[operation.plays_players.py](data/operation/plays_players.py) - needs to be rebuilt using the new tables
 
 [scraping.odds.py]() has been **deprecated** until a more reliable source is found
+
 
 ### Analysis & Modelling
 #### Potential analyses
@@ -70,35 +74,33 @@ occur. (~45 minutes)
 *Note: all data and modelling files that are not listed above are currently not in use.*
 * Write cleaning.game_logs.py script to create a nicer dataset for predictive
   analysis
+
+* Add foreign keys to DDL design
   
+* Set up look-up table for EVENTMSGACTIONTYPE (for shots, where EVENTMSGTYPE == 1)
+
+* Update query generators in [connections.py](utils/connections.py)
+  
+* Fix performance testing in [performance.py](utils/performance.py)
+  
+* Find solution for Starter/Bench/DNP designation in [scraping.lineups](data/endpoint/lineups.py)
+
 * Re-do betting odds scraping
   
-* Add ejections to [cleaning.plays.py](data/cleaning/plays.py)
-  
 * Access [NBA stats](http://stats.nba.com) for shot information (location, type, defenders)
-  
-* ~~Update [cleaning.plays.py](data/cleaning/plays.py) to include possession indicator and which players
-  are on the court~~
-  
-* ~~Add automated performance testing~~
-  
-* ~~Update all data modules to be faster (e.g. multi-processing, writing output in batches, more efficient code)~~
-  
+
 * Set up central control to build dataset from one script
   
-* Move scraping to use [nba.com](http://nba.com) - this is likely to be slower, but should be more accurate, so I manual fixes
-can be reduced and is probably also a bit more 'official'
-
 * Set up automated daily ingestion of data
-
-* ~~Keep chromedriver up to date automatically, or move to purely using the requests library~~
-
-* Convert `get_session` and pre-execution table clearing/iteration skipping into a
-  [function](utils/functions.py)
   
 * Set up API to access database from Python
 
 * Set up UI for exploration of data
 
-### Bug Log
-
+### Issue Log
+[endpoint.plays.py](data/endpoint/plays.py)
+* there are a large number of 'Instant Replay' events at the end of quarters
+* a handful of empty events in most seasons, mostly due to missing information (e.g. team/player/event) - there don't
+appear to be any consistent rules that can be applied to fix these
+* there are some inconsistencies between points scored from plays and points from `nba.games`, although these issues
+appear to come from the nba endpoints
