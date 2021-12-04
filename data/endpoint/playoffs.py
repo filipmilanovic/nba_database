@@ -94,7 +94,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'playoffs'
     TABLE_PRIMARY_KEY = 'series_id'
-    QUERY_PATH = f'{DATA_PATH}/query/{TARGET_TABLE}/'
+    QUERY_PATH = f'{ROOT_PATH}/queries/data/{TARGET_TABLE}/'
 
     playoffs_generator = NBAEndpoint(endpoint='playoffbracket')
 

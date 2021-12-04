@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'draft'
     TABLE_PRIMARY_KEY = 'draft_id'
-    QUERY_PATH = f'{DATA_PATH}/query/{TARGET_TABLE}/'
+    QUERY_PATH = f'{ROOT_PATH}/queries/data/{TARGET_TABLE}/'
 
     draft_generator = NBAEndpoint(endpoint='drafthistory')
 
