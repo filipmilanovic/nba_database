@@ -2,14 +2,10 @@ version: '3.7'
 
 services:
   db:
-    image: mysql:8.0
+    env_file: '.env'
+    image: mysql:${MYSQL_VERSION}
     restart: always
     container_name: nba_database
-    environment:
-      MYSQL_DATABASE: 'nba'
-      MYSQL_USER: 'admin'
-      MYSQL_PASSWORD: 'password'
-      MYSQL_RANDOM_ROOT_PASSWORD: 1
     ports:
       - '3308:3306'
     volumes:
@@ -21,7 +17,7 @@ services:
     container_name: nba_database_phpmyadmin
     environment:
       PMA_HOST: 'db'
-      PMA_USER: 'admin'
-      PMA_PASSWORD: 'password'
+      PMA_USER: 'root'
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - '8080:80'

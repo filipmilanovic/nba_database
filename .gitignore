@@ -11,7 +11,7 @@
 
 # environment variables
 venv/
-/**/environment.py
+.env
 
 # local files
 database/
