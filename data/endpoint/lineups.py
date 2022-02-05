@@ -90,7 +90,7 @@ def get_players_games(player_game: dict):
 
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
-    create_table_lineups(engine, metadata)
+    create_table_lineups(metadata)
 
     TARGET_TABLE = 'lineups'
     TABLE_PRIMARY_KEY = 'lineup_id'

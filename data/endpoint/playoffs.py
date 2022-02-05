@@ -59,16 +59,17 @@ def get_series_logs(json, season: int):
 
 def get_series_data(series_info: dict, season: int):
     """ convert raw data to a tidied dictionary """
+    # set 0s as null
     output = {'series_id': get_series_id(series_info['seriesId'],
                                          str(series_info['highSeedId']),
                                          str(series_info['lowSeedId']),
                                          season),
               'conference': series_info['seriesConference'],
               'playoff_round': series_info['roundNumber'],
-              'higher_seed_team_id': series_info['highSeedId'],
-              'higher_seed': series_info['highSeedRank'],
-              'lower_seed_team_id': series_info['lowSeedId'],
-              'lower_seed': series_info['lowSeedRank']
+              'higher_seed_team_id': none_if(series_info['highSeedId'], 0),
+              'higher_seed': none_if(series_info['highSeedRank'], 0),
+              'lower_seed_team_id': none_if(series_info['lowSeedId'], 0),
+              'lower_seed': none_if(series_info['lowSeedRank'], 0)
               }
 
     return output
@@ -90,7 +91,7 @@ def get_series_id(series_id: str, high_team_id: str, low_team_id: str, season: i
 
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
-    create_table_playoffs(engine, metadata)
+    create_table_playoffs(metadata)
 
     TARGET_TABLE = 'playoffs'
     TABLE_PRIMARY_KEY = 'series_id'

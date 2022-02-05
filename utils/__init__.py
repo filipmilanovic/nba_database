@@ -6,4 +6,3 @@ from utils.endpoint import *
 from utils.functions import *
 from utils.headers import *
 from utils.params import *
-from utils.tables import *

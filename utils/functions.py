@@ -22,6 +22,15 @@ def progress(iteration, iterations, iteration_name, lapsed, sql_status=''):
 
 def time_lapsed():
     return str('{0:.2f}'.format(time.time() - start_time))
+
+
+def none_if(x, cond):
+    if x == cond:
+        output = None
+    else:
+        output = x
+
+    return output
 #
 #
 # #  Data cleaning functions
