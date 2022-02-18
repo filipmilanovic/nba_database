@@ -1,17 +1,21 @@
 # SETTING UP SQL CONNECTIONS
+import os
 import pandas as pd
 import sqlalchemy as sql
+from dotenv import load_dotenv
 from utils.colours import *
-from utils.environment import *
 from utils.functions import get_distinct_ids
 from utils.params import AS_UPSERT
 from sqlalchemy.exc import ProgrammingError
 
+# load connection variables from .env file
+load_dotenv()
+
 
 def get_connection(db: str):
     """ set up MySQL connection """
-    mysql_user = os.environ['MYSQL_USER']
-    mysql_pass = os.environ['MYSQL_PASSWORD']
+    mysql_user = 'root'
+    mysql_pass = os.environ['MYSQL_ROOT_PASSWORD']
     mysql_host = os.environ['MYSQL_HOST']
     mysql_port = os.environ['MYSQL_PORT']
 

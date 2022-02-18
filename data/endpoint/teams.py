@@ -135,7 +135,7 @@ def get_team_dict(data_dict: dict, season: int):
 
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
-    create_table_teams(engine, metadata)
+    create_table_teams(metadata)
 
     TARGET_TABLE = 'teams'
     TABLE_PRIMARY_KEY = 'team_season_id'

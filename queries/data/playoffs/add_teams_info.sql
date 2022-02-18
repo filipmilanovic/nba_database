@@ -17,4 +17,4 @@ set p.higher_seed_team_id = s.higher_seed_team_id,
 	p.higher_seed = s.higher_seed,
     p.lower_seed_team_id = s.lower_seed_team_id,
     p.lower_seed = s.lower_seed
-where p.higher_seed_team_id = 0;
+where p.higher_seed_team_id is null;

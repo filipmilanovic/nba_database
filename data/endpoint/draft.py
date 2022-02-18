@@ -57,7 +57,7 @@ def get_draft_dict(pick_dict: dict):
 
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
-    create_table_draft(engine, metadata)
+    create_table_draft(metadata)
 
     TARGET_TABLE = 'draft'
     TABLE_PRIMARY_KEY = 'draft_id'

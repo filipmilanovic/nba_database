@@ -168,7 +168,7 @@ def get_home_time(game_dict: dict, season: int):
 
 if __name__ == '__main__':
     engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
-    create_table_games(engine, metadata)
+    create_table_games(metadata)
 
     TARGET_TABLE = 'games'
     TABLE_PRIMARY_KEY = 'game_id'
