@@ -1,15 +1,15 @@
-from data import *
+from data.scripts import *
 
 
 def all_games_data():
-    """ set up iterations to get all data """
+    """ set up iterations to get all scripts """
     iterations = list(range(len(season_range)))
     for iteration in iterations:
         get_season_data(iteration)
 
 
 def get_season_data(iteration: int):
-    """ get data for the season """
+    """ get scripts for the season """
     iteration_start_time = time.time()
 
     season = season_range[iteration]
@@ -88,7 +88,7 @@ def get_game_data(game_dict: dict, season: int):
     """ get dictionary of game information """
     playoff_info = get_playoff_info(game_dict)
 
-    # playoff data is dirty up to 2001
+    # playoff scripts is dirty up to 2001
     if season <= 2001:
         playoff_info['SERIES_ID'] = None
         playoff_info['GAME_NUM'] = None
@@ -172,7 +172,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'games'
     TABLE_PRIMARY_KEY = 'game_id'
-    QUERY_PATH = f'{ROOT_PATH}/queries/data/{TARGET_TABLE}/'
+    QUERY_PATH = f'{ROOT_PATH}/queries/scripts/{TARGET_TABLE}/'
 
     game_generator = NBAEndpoint(endpoint='scheduleLeaguev2')
     playoffs_generator = NBAEndpoint(endpoint='commonplayoffseries')

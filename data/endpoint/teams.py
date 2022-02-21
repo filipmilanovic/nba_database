@@ -1,12 +1,20 @@
-from data import *
+import sys
+import time
+
+from ddl.teams import create_table_teams
+from utils.colours import Colour
+from utils.connections import check_db_duplicates, write_data
+from utils.endpoint import NBAEndpoint
+from utils.functions import get_sleep_time, progress, start_time, time_lapsed
+from utils.params import START_SEASON, END_SEASON
 
 
-def get_seasons_teams():
+def get_seasons_teams(db, target_table, primary_key):
     """ generate teams by season, then get team detail for each season """
     generate_seasons_teams_json()
     tidy_dict = tidy_seasons_teams(seasons_teams_generator.response)
-    output = check_db_duplicates(tidy_dict, False, 'team_season_id', TARGET_TABLE, TABLE_PRIMARY_KEY,
-                                 metadata, engine, connection)
+    output = check_db_duplicates(tidy_dict, False, 'team_season_id', target_table, primary_key,
+                                 db['metadata'], db['engine'], db['connection'])
 
     return output
 
@@ -44,7 +52,7 @@ def tidy_seasons_teams(json: dict):
 
 
 def get_season_team_dict(data_dict: dict):
-    """ convert raw data to tidied dictionary """
+    """ convert raw scripts to tidied dictionary """
     output = {
         'team_id': data_dict['TEAM_ID'],
         'start_year': max(int(data_dict['MIN_YEAR']) + 1, START_SEASON),
@@ -54,7 +62,7 @@ def get_season_team_dict(data_dict: dict):
     return output
 
 
-def get_teams(seasons_teams_list):
+def get_teams(seasons_teams_list, db, target_table, primary_key):
     """ get team information by season and write to db """
     iterations = list(range(len(seasons_teams_list)))
 
@@ -71,7 +79,8 @@ def get_teams(seasons_teams_list):
 
         team_dict = get_team_dict(team_info, season_team['season'])
 
-        status = write_data(engine, metadata, connection, [team_dict], TARGET_TABLE, TABLE_PRIMARY_KEY)
+        status = write_data(db['metadata'], db['engine'], db['connection'],
+                            [team_dict], target_table, primary_key)
 
         progress(iteration=iteration,
                  iterations=len(iterations),
@@ -119,7 +128,7 @@ def get_request_parameters(team_parameters: dict):
 
 
 def get_team_dict(data_dict: dict, season: int):
-    """ convert raw data to a tidied dictionary """
+    """ convert raw scripts to a tidied dictionary """
     output = {
         'team_season_id': data_dict['TEAM_ID'] + season * 10000000000,
         'team_id': data_dict['TEAM_ID'],
@@ -133,21 +142,20 @@ def get_team_dict(data_dict: dict, season: int):
     return output
 
 
-if __name__ == '__main__':
-    engine, metadata, connection = get_connection(os.environ['MYSQL_DATABASE'])
-    create_table_teams(metadata)
+def run_teams(target_table, primary_key, db):
+    create_table_teams(db['metadata'])
 
-    TARGET_TABLE = 'teams'
-    TABLE_PRIMARY_KEY = 'team_season_id'
-
+    global seasons_teams_generator
     seasons_teams_generator = NBAEndpoint(endpoint='commonteamyears')
+
+    global team_generator
     team_generator = NBAEndpoint(endpoint='teaminfocommon')
 
-    seasons_teams = get_seasons_teams()
+    seasons_teams = get_seasons_teams(db, target_table, primary_key)
 
-    get_teams(seasons_teams)
+    get_teams(seasons_teams, db, target_table, primary_key)
 
     sys.stdout.write('\n')
 
-    print(Colour.green + f'Table {TARGET_TABLE} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
+    print(Colour.green + f'Table {target_table} loaded' + ' ' + str('{0:.2f}'.format(time.time() - start_time))
           + ' seconds taken' + Colour.end)

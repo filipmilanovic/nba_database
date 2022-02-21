@@ -1,8 +1,5 @@
-from data import *
-
-
 def all_play_data():
-    """ loop through game_ids, generating and cleaning data, then write """
+    """ loop through game_ids, generating and cleaning scripts, then write """
     for iteration in range(len(game_ids)):
         iteration_start_time = time.time()
         game_id = game_ids[iteration]
@@ -77,7 +74,7 @@ def add_paired_event(play: list):
             output = play
     # there is both a home and an away event
     else:
-        # ignore if bad data
+        # ignore if bad scripts
         if not home_event and not away_event:
             output = []
         # the event types are block/miss and steal/turnover
@@ -391,7 +388,7 @@ if __name__ == '__main__':
     games_query = get_column_query(metadata, engine, 'games', 'game_id', 'season', season_range)
     games_result = connection.execute(games_query)
 
-    # extract game_ids as dict to enable standard checking of existing data in DB
+    # extract game_ids as dict to enable standard checking of existing scripts in DB
     all_game_ids = [{'game_id': row[0]} for row in games_result]
     game_ids = check_db_duplicates(all_game_ids, False, 'game_id', TARGET_TABLE, 'game_id',
                                    metadata, engine, connection)

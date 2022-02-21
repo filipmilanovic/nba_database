@@ -1,0 +1,22 @@
+[2022-02-21 18:33:01,719] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path manual__2022-02-21T18:33:00.941872+00:00 [queued]>
+[2022-02-21 18:33:01,725] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path manual__2022-02-21T18:33:00.941872+00:00 [queued]>
+[2022-02-21 18:33:01,725] {taskinstance.py:1238} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 18:33:01,725] {taskinstance.py:1239} INFO - Starting attempt 1 of 1
+[2022-02-21 18:33:01,725] {taskinstance.py:1240} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 18:33:01,734] {taskinstance.py:1259} INFO - Executing <Task(PythonOperator): get_path> on 2022-02-21 18:33:00.941872+00:00
+[2022-02-21 18:33:01,737] {standard_task_runner.py:52} INFO - Started process 58 to run task
+[2022-02-21 18:33:01,739] {standard_task_runner.py:76} INFO - Running: ['***', 'tasks', 'run', 'test_path', 'get_path', 'manual__2022-02-21T18:33:00.941872+00:00', '--job-id', '63', '--raw', '--subdir', 'DAGS_FOLDER/test.py', '--cfg-path', '/tmp/tmpgeqc1vex', '--error-file', '/tmp/tmpdpoqbqbq']
+[2022-02-21 18:33:01,739] {standard_task_runner.py:77} INFO - Job 63: Subtask get_path
+[2022-02-21 18:33:01,773] {logging_mixin.py:109} INFO - Running <TaskInstance: test_path.get_path manual__2022-02-21T18:33:00.941872+00:00 [running]> on host 4fcf2b89a9db
+[2022-02-21 18:33:01,809] {taskinstance.py:1426} INFO - Exporting the following env vars:
+AIRFLOW_CTX_DAG_OWNER=***
+AIRFLOW_CTX_DAG_ID=test_path
+AIRFLOW_CTX_TASK_ID=get_path
+AIRFLOW_CTX_EXECUTION_DATE=2022-02-21T18:33:00.941872+00:00
+AIRFLOW_CTX_DAG_RUN_ID=manual__2022-02-21T18:33:00.941872+00:00
+[2022-02-21 18:33:01,809] {python.py:175} INFO - Done. Returned value was: /home/***/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/data
+[2022-02-21 18:33:01,823] {taskinstance.py:1277} INFO - Marking task as SUCCESS. dag_id=test_path, task_id=get_path, execution_date=20220221T183300, start_date=20220221T183301, end_date=20220221T183301
+[2022-02-21 18:33:01,871] {local_task_job.py:154} INFO - Task exited with return code 0
+[2022-02-21 18:33:01,896] {local_task_job.py:264} INFO - 0 downstream tasks scheduled from follow-on schedule check

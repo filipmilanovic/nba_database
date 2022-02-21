@@ -1,7 +1,38 @@
-version: '3.7'
+version: '3.9'
+
+x-airflow-common:
+  &airflow-common
+  # In order to add custom dependencies or upgrade provider packages you can use your extended image.
+  # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
+  # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
+  # image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.2.3}
+  build: .
+  env_file: '.env'
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow_postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow_postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@airflow_redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/logs:/opt/airflow/logs
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    airflow_redis:
+      condition: service_healthy
+    airflow_postgres:
+      condition: service_healthy
 
 services:
-  db:
+  nba_db:
+    # MySQL DB for holding NBA scripts
     env_file: '.env'
     image: mysql:${MYSQL_VERSION}
     restart: always
@@ -9,15 +40,100 @@ services:
     ports:
       - '3308:3306'
     volumes:
-      - ./database:/var/lib/mysql
+      - nba_database:/var/lib/mysql
 
-  phpmyadmin:
+  nba_phpmyadmin:
+    # UI for interacting with MySQL DB
     image: phpmyadmin/phpmyadmin:latest
     restart: always
     container_name: nba_database_phpmyadmin
     environment:
-      PMA_HOST: 'db'
+      PMA_HOST: 'nba_db'
       PMA_USER: 'root'
       PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
-      - '8080:80'
+      - '8081:80'
+
+  airflow_postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_db_volume:/var/lib/postgresql/scripts
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "airflow" ]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  airflow_redis:
+    image: redis:latest
+    expose:
+      - 6379
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    restart: always
+
+  airflow_webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - 8080:8080
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow_init:
+        condition: service_completed_successfully
+
+  airflow_scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow_init:
+        condition: service_completed_successfully
+
+  airflow_worker:
+    <<: *airflow-common
+    command: celery worker
+    environment:
+      <<: *airflow-common-env
+      # Required to handle warm shutdown of the celery workers properly
+      # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
+      DUMB_INIT_SETSID: "0"
+    restart: always
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow_init:
+        condition: service_completed_successfully
+
+  airflow_init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    # yamllint disable rule:line-length
+    command:
+      - -c
+      - |
+        mkdir -p /sources/airflow/dags /sources/airflow/logs
+        chown -R "${AIRFLOW_UID}:0" /sources/airflow/ /sources/airflow/{dags, logs}
+        exec /entrypoint airflow version
+    # yamllint enable rule:line-length
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    user: "${AIRFLOW_UID:-50000}:0"
+    volumes:
+      - .:/sources
+
+volumes:
+  nba_database:
+  postgres_db_volume:

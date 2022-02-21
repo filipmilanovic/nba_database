@@ -1,0 +1,67 @@
+[2022-02-21 16:53:37,630] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [queued]>
+[2022-02-21 16:53:37,645] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [queued]>
+[2022-02-21 16:53:37,645] {taskinstance.py:1238} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 16:53:37,645] {taskinstance.py:1239} INFO - Starting attempt 1 of 1
+[2022-02-21 16:53:37,645] {taskinstance.py:1240} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 16:53:37,660] {taskinstance.py:1259} INFO - Executing <Task(PythonOperator): get_path> on 2022-02-18 00:00:00+00:00
+[2022-02-21 16:53:37,667] {standard_task_runner.py:52} INFO - Started process 155 to run task
+[2022-02-21 16:53:37,671] {standard_task_runner.py:76} INFO - Running: ['***', 'tasks', 'run', 'test_path', 'get_path', 'scheduled__2022-02-18T00:00:00+00:00', '--job-id', '52', '--raw', '--subdir', 'DAGS_FOLDER/test.py', '--cfg-path', '/tmp/tmp59iscr29', '--error-file', '/tmp/tmp8p7kje4k']
+[2022-02-21 16:53:37,671] {standard_task_runner.py:77} INFO - Job 52: Subtask get_path
+[2022-02-21 16:53:37,737] {logging_mixin.py:109} INFO - Running <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [running]> on host 7c24e16e6467
+[2022-02-21 16:53:37,809] {taskinstance.py:1426} INFO - Exporting the following env vars:
+AIRFLOW_CTX_DAG_OWNER=***
+AIRFLOW_CTX_DAG_ID=test_path
+AIRFLOW_CTX_TASK_ID=get_path
+AIRFLOW_CTX_EXECUTION_DATE=2022-02-18T00:00:00+00:00
+AIRFLOW_CTX_DAG_RUN_ID=scheduled__2022-02-18T00:00:00+00:00
+[2022-02-21 16:53:37,809] {logging_mixin.py:109} INFO - /opt/***
+[2022-02-21 16:53:37,810] {python.py:175} INFO - Done. Returned value was: None
+[2022-02-21 16:53:37,826] {taskinstance.py:1277} INFO - Marking task as SUCCESS. dag_id=test_path, task_id=get_path, execution_date=20220218T000000, start_date=20220221T165337, end_date=20220221T165337
+[2022-02-21 16:53:37,883] {local_task_job.py:154} INFO - Task exited with return code 0
+[2022-02-21 16:53:37,933] {local_task_job.py:264} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2022-02-21 17:02:16,734] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [queued]>
+[2022-02-21 17:02:16,746] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [queued]>
+[2022-02-21 17:02:16,747] {taskinstance.py:1238} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 17:02:16,747] {taskinstance.py:1239} INFO - Starting attempt 1 of 1
+[2022-02-21 17:02:16,747] {taskinstance.py:1240} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 17:02:16,760] {taskinstance.py:1259} INFO - Executing <Task(PythonOperator): get_path> on 2022-02-18 00:00:00+00:00
+[2022-02-21 17:02:16,765] {standard_task_runner.py:52} INFO - Started process 153 to run task
+[2022-02-21 17:02:16,768] {standard_task_runner.py:76} INFO - Running: ['***', 'tasks', 'run', 'test_path', 'get_path', 'scheduled__2022-02-18T00:00:00+00:00', '--job-id', '50', '--raw', '--subdir', 'DAGS_FOLDER/test.py', '--cfg-path', '/tmp/tmptggd69gf', '--error-file', '/tmp/tmpv1fjwg9h']
+[2022-02-21 17:02:16,768] {standard_task_runner.py:77} INFO - Job 50: Subtask get_path
+[2022-02-21 17:02:16,817] {logging_mixin.py:109} INFO - Running <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [running]> on host ce809d68944a
+[2022-02-21 17:02:16,907] {taskinstance.py:1426} INFO - Exporting the following env vars:
+AIRFLOW_CTX_DAG_OWNER=***
+AIRFLOW_CTX_DAG_ID=test_path
+AIRFLOW_CTX_TASK_ID=get_path
+AIRFLOW_CTX_EXECUTION_DATE=2022-02-18T00:00:00+00:00
+AIRFLOW_CTX_DAG_RUN_ID=scheduled__2022-02-18T00:00:00+00:00
+[2022-02-21 17:02:16,908] {python.py:175} INFO - Done. Returned value was: /nba_database
+[2022-02-21 17:02:16,926] {taskinstance.py:1277} INFO - Marking task as SUCCESS. dag_id=test_path, task_id=get_path, execution_date=20220218T000000, start_date=20220221T170216, end_date=20220221T170216
+[2022-02-21 17:02:16,941] {local_task_job.py:154} INFO - Task exited with return code 0
+[2022-02-21 17:02:16,971] {local_task_job.py:264} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2022-02-21 19:10:59,778] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [queued]>
+[2022-02-21 19:10:59,786] {taskinstance.py:1032} INFO - Dependencies all met for <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [queued]>
+[2022-02-21 19:10:59,786] {taskinstance.py:1238} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 19:10:59,786] {taskinstance.py:1239} INFO - Starting attempt 1 of 1
+[2022-02-21 19:10:59,786] {taskinstance.py:1240} INFO - 
+--------------------------------------------------------------------------------
+[2022-02-21 19:10:59,795] {taskinstance.py:1259} INFO - Executing <Task(PythonOperator): get_path> on 2022-02-18 00:00:00+00:00
+[2022-02-21 19:10:59,799] {standard_task_runner.py:52} INFO - Started process 154 to run task
+[2022-02-21 19:10:59,801] {standard_task_runner.py:76} INFO - Running: ['***', 'tasks', 'run', 'test_path', 'get_path', 'scheduled__2022-02-18T00:00:00+00:00', '--job-id', '50', '--raw', '--subdir', 'DAGS_FOLDER/test.py', '--cfg-path', '/tmp/tmpa16o8m0w', '--error-file', '/tmp/tmpy5pq0w_k']
+[2022-02-21 19:10:59,801] {standard_task_runner.py:77} INFO - Job 50: Subtask get_path
+[2022-02-21 19:10:59,834] {logging_mixin.py:109} INFO - Running <TaskInstance: test_path.get_path scheduled__2022-02-18T00:00:00+00:00 [running]> on host 1594888d6c38
+[2022-02-21 19:10:59,872] {taskinstance.py:1426} INFO - Exporting the following env vars:
+AIRFLOW_CTX_DAG_OWNER=***
+AIRFLOW_CTX_DAG_ID=test_path
+AIRFLOW_CTX_TASK_ID=get_path
+AIRFLOW_CTX_EXECUTION_DATE=2022-02-18T00:00:00+00:00
+AIRFLOW_CTX_DAG_RUN_ID=scheduled__2022-02-18T00:00:00+00:00
+[2022-02-21 19:10:59,873] {python.py:175} INFO - Done. Returned value was: ['/home/***/.local/bin', '/usr/local/lib/python37.zip', '/usr/local/lib/python3.7', '/usr/local/lib/python3.7/lib-dynload', '/home/***/.local/lib/python3.7/site-packages', '/usr/local/lib/python3.7/site-packages', '/opt/***/dags', '/opt/***/config', '/opt/***/plugins']
+[2022-02-21 19:10:59,885] {taskinstance.py:1277} INFO - Marking task as SUCCESS. dag_id=test_path, task_id=get_path, execution_date=20220218T000000, start_date=20220221T191059, end_date=20220221T191059
+[2022-02-21 19:10:59,933] {local_task_job.py:154} INFO - Task exited with return code 0
+[2022-02-21 19:10:59,950] {local_task_job.py:264} INFO - 0 downstream tasks scheduled from follow-on schedule check

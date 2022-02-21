@@ -1,0 +1,248 @@
+[2022-02-21 18:50:43,576] {processor.py:163} INFO - Started process (PID=30) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:50:43,579] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:50:43,579] {logging_mixin.py:109} INFO - [2022-02-21 18:50:43,579] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:50:43,582] {logging_mixin.py:109} INFO - [2022-02-21 18:50:43,581] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import endpoint
+ModuleNotFoundError: No module named 'endpoint'
+[2022-02-21 18:50:43,592] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:50:43,598] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.023 seconds
+[2022-02-21 18:51:13,697] {processor.py:163} INFO - Started process (PID=40) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:51:13,700] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:51:13,701] {logging_mixin.py:109} INFO - [2022-02-21 18:51:13,701] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:51:13,702] {logging_mixin.py:109} INFO - [2022-02-21 18:51:13,702] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import endpoint
+ModuleNotFoundError: No module named 'endpoint'
+[2022-02-21 18:51:13,709] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:51:13,714] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.019 seconds
+[2022-02-21 18:51:43,845] {processor.py:163} INFO - Started process (PID=42) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:51:43,846] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:51:43,846] {logging_mixin.py:109} INFO - [2022-02-21 18:51:43,846] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:51:43,848] {logging_mixin.py:109} INFO - [2022-02-21 18:51:43,847] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import endpoint
+ModuleNotFoundError: No module named 'endpoint'
+[2022-02-21 18:51:43,864] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:51:43,872] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.030 seconds
+[2022-02-21 18:52:00,937] {processor.py:163} INFO - Started process (PID=44) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:52:00,939] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:52:00,940] {logging_mixin.py:109} INFO - [2022-02-21 18:52:00,940] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:52:00,942] {logging_mixin.py:109} INFO - [2022-02-21 18:52:00,942] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import teams
+ModuleNotFoundError: No module named 'teams'
+[2022-02-21 18:52:00,954] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:52:00,958] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.023 seconds
+[2022-02-21 18:52:31,078] {processor.py:163} INFO - Started process (PID=46) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:52:31,080] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:52:31,081] {logging_mixin.py:109} INFO - [2022-02-21 18:52:31,081] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:52:31,084] {logging_mixin.py:109} INFO - [2022-02-21 18:52:31,083] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import teams
+ModuleNotFoundError: No module named 'teams'
+[2022-02-21 18:52:31,096] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:52:31,103] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.030 seconds
+[2022-02-21 18:53:42,377] {processor.py:163} INFO - Started process (PID=30) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:53:42,382] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:53:42,383] {logging_mixin.py:109} INFO - [2022-02-21 18:53:42,383] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:53:42,385] {logging_mixin.py:109} INFO - [2022-02-21 18:53:42,384] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import teams
+ModuleNotFoundError: No module named 'teams'
+[2022-02-21 18:53:42,395] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:53:42,401] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.025 seconds
+[2022-02-21 18:54:12,481] {processor.py:163} INFO - Started process (PID=40) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:54:12,481] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:54:12,482] {logging_mixin.py:109} INFO - [2022-02-21 18:54:12,481] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:54:12,483] {logging_mixin.py:109} INFO - [2022-02-21 18:54:12,482] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import teams
+ModuleNotFoundError: No module named 'teams'
+[2022-02-21 18:54:12,490] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:54:12,495] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.016 seconds
+[2022-02-21 18:59:35,557] {processor.py:163} INFO - Started process (PID=30) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:59:35,561] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 18:59:35,561] {logging_mixin.py:109} INFO - [2022-02-21 18:59:35,561] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:59:35,563] {logging_mixin.py:109} INFO - [2022-02-21 18:59:35,562] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import teams
+ModuleNotFoundError: No module named 'teams'
+[2022-02-21 18:59:35,572] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 18:59:35,579] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.024 seconds
+[2022-02-21 19:00:05,674] {processor.py:163} INFO - Started process (PID=40) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:05,674] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:00:05,675] {logging_mixin.py:109} INFO - [2022-02-21 19:00:05,674] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:05,676] {logging_mixin.py:109} INFO - [2022-02-21 19:00:05,675] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import teams
+ModuleNotFoundError: No module named 'teams'
+[2022-02-21 19:00:05,684] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:05,689] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.017 seconds
+[2022-02-21 19:00:35,811] {processor.py:163} INFO - Started process (PID=42) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:35,813] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:00:35,813] {logging_mixin.py:109} INFO - [2022-02-21 19:00:35,813] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:35,816] {logging_mixin.py:109} INFO - [2022-02-21 19:00:35,815] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    import teams
+ModuleNotFoundError: No module named 'teams'
+[2022-02-21 19:00:35,830] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:35,840] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.033 seconds
+[2022-02-21 19:00:43,872] {processor.py:163} INFO - Started process (PID=44) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:43,873] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:00:43,873] {logging_mixin.py:109} INFO - [2022-02-21 19:00:43,873] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:43,875] {logging_mixin.py:109} INFO - [2022-02-21 19:00:43,875] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    from data.endpoint.teams import run_teams
+ModuleNotFoundError: No module named 'data'
+[2022-02-21 19:00:43,884] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:43,888] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.018 seconds
+[2022-02-21 19:00:55,910] {processor.py:163} INFO - Started process (PID=45) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:55,911] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:00:55,912] {logging_mixin.py:109} INFO - [2022-02-21 19:00:55,912] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:55,913] {logging_mixin.py:109} INFO - [2022-02-21 19:00:55,913] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 5, in <module>
+    from endpoint.teams import run_teams
+ModuleNotFoundError: No module named 'endpoint'
+[2022-02-21 19:00:55,922] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:00:55,927] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.018 seconds
+[2022-02-21 19:01:26,036] {processor.py:163} INFO - Started process (PID=47) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:01:26,038] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:01:26,039] {logging_mixin.py:109} INFO - [2022-02-21 19:01:26,039] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:01:26,042] {logging_mixin.py:109} INFO - [2022-02-21 19:01:26,041] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 8, in <module>
+    from endpoint.teams import run_teams
+  File "./endpoint/teams.py", line 6, in <module>
+    from ddl.teams import create_table_teams
+ModuleNotFoundError: No module named 'ddl'
+[2022-02-21 19:01:26,049] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:01:26,053] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.018 seconds
+[2022-02-21 19:01:56,162] {processor.py:163} INFO - Started process (PID=49) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:01:56,164] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:01:56,165] {logging_mixin.py:109} INFO - [2022-02-21 19:01:56,165] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:01:56,168] {logging_mixin.py:109} INFO - [2022-02-21 19:01:56,167] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 8, in <module>
+    from endpoint.teams import run_teams
+  File "./endpoint/teams.py", line 6, in <module>
+    from ddl.teams import create_table_teams
+ModuleNotFoundError: No module named 'ddl'
+[2022-02-21 19:01:56,184] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:01:56,189] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.030 seconds
+[2022-02-21 19:02:26,297] {processor.py:163} INFO - Started process (PID=51) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:02:26,299] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:02:26,299] {logging_mixin.py:109} INFO - [2022-02-21 19:02:26,299] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:02:26,302] {logging_mixin.py:109} INFO - [2022-02-21 19:02:26,301] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 8, in <module>
+    from endpoint.teams import run_teams
+  File "./endpoint/teams.py", line 6, in <module>
+    from ddl.teams import create_table_teams
+ModuleNotFoundError: No module named 'ddl'
+[2022-02-21 19:02:26,310] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:02:26,314] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.020 seconds
+[2022-02-21 19:02:43,363] {processor.py:163} INFO - Started process (PID=54) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:02:43,364] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:02:43,364] {logging_mixin.py:109} INFO - [2022-02-21 19:02:43,364] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:02:43,367] {logging_mixin.py:109} INFO - [2022-02-21 19:02:43,367] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 7, in <module>
+    from endpoint.teams import run_teams
+  File "./endpoint/teams.py", line 6, in <module>
+    from ddl.teams import create_table_teams
+ModuleNotFoundError: No module named 'ddl'
+[2022-02-21 19:02:43,381] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:02:43,390] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.030 seconds
+[2022-02-21 19:03:13,521] {processor.py:163} INFO - Started process (PID=55) to work on /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:03:13,524] {processor.py:642} INFO - Processing file /opt/airflow/dags/etl_teams.py for tasks to queue
+[2022-02-21 19:03:13,525] {logging_mixin.py:109} INFO - [2022-02-21 19:03:13,524] {dagbag.py:500} INFO - Filling up the DagBag from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:03:13,530] {logging_mixin.py:109} INFO - [2022-02-21 19:03:13,529] {dagbag.py:334} ERROR - Failed to import: /opt/airflow/dags/etl_teams.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.7/site-packages/airflow/models/dagbag.py", line 331, in _load_modules_from_file
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 728, in exec_module
+  File "<frozen importlib._bootstrap>", line 219, in _call_with_frames_removed
+  File "/opt/airflow/dags/etl_teams.py", line 7, in <module>
+    from endpoint.teams import run_teams
+  File "./endpoint/teams.py", line 6, in <module>
+    from ddl.teams import create_table_teams
+ModuleNotFoundError: No module named 'ddl'
+[2022-02-21 19:03:13,548] {processor.py:656} WARNING - No viable dags retrieved from /opt/airflow/dags/etl_teams.py
+[2022-02-21 19:03:13,560] {processor.py:171} INFO - Processing /opt/airflow/dags/etl_teams.py took 0.044 seconds

@@ -1,8 +1,5 @@
-from data import *
-
-
 def get_transactions_data():
-    """ set up iterations to get all data """
+    """ set up iterations to get all scripts """
     response = r.request(method='GET',
                          url=url,
                          headers=nba_headers).json()
@@ -15,7 +12,7 @@ def get_transactions_data():
 
 
 def tidy_json(json):
-    """ generate cleaned data for each transaction """
+    """ generate cleaned scripts for each transaction """
     output = [get_transaction_data(value) for value in json['NBA_Player_Movement']['rows']]
 
     return output

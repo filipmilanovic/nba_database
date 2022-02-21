@@ -1,15 +1,15 @@
-from data import *
+from data.scripts import *
 
 
 def all_playoffs_data():
-    """ set up iterations to get all data """
+    """ set up iterations to get all scripts """
     iterations = list(range(len(season_range)))
     for iteration in iterations:
         get_season_data(iteration)
 
 
 def get_season_data(iteration: int):
-    """ get data for the season """
+    """ get scripts for the season """
     iteration_start_time = time.time()
 
     season = season_range[iteration]
@@ -58,7 +58,7 @@ def get_series_logs(json, season: int):
 
 
 def get_series_data(series_info: dict, season: int):
-    """ convert raw data to a tidied dictionary """
+    """ convert raw scripts to a tidied dictionary """
     # set 0s as null
     output = {'series_id': get_series_id(series_info['seriesId'],
                                          str(series_info['highSeedId']),
@@ -77,7 +77,7 @@ def get_series_data(series_info: dict, season: int):
 
 def get_series_id(series_id: str, high_team_id: str, low_team_id: str, season: int):
     """ clean the series IDs into a numeric only string"""
-    # team data is missing prior to 2019, so have to deal with these 0s separately
+    # team scripts is missing prior to 2019, so have to deal with these 0s separately
     if high_team_id != '0':
         remove_team_id = series_id.replace(high_team_id, '').replace(low_team_id, '')
     else:
@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'playoffs'
     TABLE_PRIMARY_KEY = 'series_id'
-    QUERY_PATH = f'{ROOT_PATH}/queries/data/{TARGET_TABLE}/'
+    QUERY_PATH = f'{ROOT_PATH}/queries/scripts/{TARGET_TABLE}/'
 
     playoffs_generator = NBAEndpoint(endpoint='playoffbracket')
 

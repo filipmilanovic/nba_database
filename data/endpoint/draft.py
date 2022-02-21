@@ -1,8 +1,8 @@
-from data import *
+from data.scripts import *
 
 
 def get_draft_data():
-    """ get draft data """
+    """ get draft scripts """
     generate_playoffs_json()
     draft_info = get_draft_info(draft_generator.response)
 
@@ -41,7 +41,7 @@ def get_draft_info(json):
 
 
 def get_draft_dict(pick_dict: dict):
-    """ convert raw data to a tidied dictionary """
+    """ convert raw scripts to a tidied dictionary """
     output = {'draft_id': str(pick_dict['PERSON_ID'] + (int(pick_dict['SEASON']) + 1) * 10000000),
               'player_id': pick_dict['PERSON_ID'],
               'season': int(pick_dict['SEASON']) + 1,
@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'draft'
     TABLE_PRIMARY_KEY = 'draft_id'
-    QUERY_PATH = f'{ROOT_PATH}/queries/data/{TARGET_TABLE}/'
+    QUERY_PATH = f'{ROOT_PATH}/queries/scripts/{TARGET_TABLE}/'
 
     draft_generator = NBAEndpoint(endpoint='drafthistory')
 

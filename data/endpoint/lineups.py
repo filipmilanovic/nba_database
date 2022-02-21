@@ -1,15 +1,12 @@
-from data import *
-
-
 def all_lineup_data():
-    """ set up iterations to get all data """
+    """ set up iterations to get all scripts """
     iterations = list(range(len(season_range)))
     for iteration in iterations:
         get_season_data(iteration)
 
 
 def get_season_data(iteration: int):
-    """ get lineup data for a season """
+    """ get lineup scripts for a season """
     iteration_start_time = time.time()
 
     season = season_range[iteration]
@@ -30,7 +27,7 @@ def get_season_data(iteration: int):
 
 
 def get_season_type_data(season: int, season_type: str):
-    """ get data for season type """
+    """ get scripts for season type """
     generate_playoffs_json(season, season_type)
     game_logs = get_game_logs(game_log_generator.response)
 
@@ -66,7 +63,7 @@ def get_game_logs(json):
 
     players_games = [get_players_games(player_game) for player_game in game_log_data]
 
-    # only check for duplicates if data not empty
+    # only check for duplicates if scripts not empty
     if players_games:
         output = check_db_duplicates(players_games, False, 'lineup_id', TARGET_TABLE, TABLE_PRIMARY_KEY,
                                      metadata, engine, connection)
@@ -77,7 +74,7 @@ def get_game_logs(json):
 
 
 def get_players_games(player_game: dict):
-    """ convert raw data to a tidied dictionary """
+    """ convert raw scripts to a tidied dictionary """
     output = {'lineup_id': int(player_game['GAME_ID']) * 10000000 + int(player_game['PLAYER_ID']),
               'game_id': player_game['GAME_ID'],
               'team_id': player_game['TEAM_ID'] + 1,

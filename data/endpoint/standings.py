@@ -1,15 +1,15 @@
-from data import *
+from data.scripts import *
 
 
 def all_standings_data():
-    """ set up iterations to get all data """
+    """ set up iterations to get all scripts """
     iterations = list(range(len(season_range)))
     for iteration in iterations:
         get_season_data(iteration)
 
 
 def get_season_data(iteration: int):
-    """ get data for the season """
+    """ get scripts for the season """
     iteration_start_time = time.time()
 
     season = season_range[iteration]
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
     TARGET_TABLE = 'standings'
     TABLE_PRIMARY_KEY = 'team_season_id'
-    QUERY_PATH = f'{ROOT_PATH}/queries/data/{TARGET_TABLE}/'
+    QUERY_PATH = f'{ROOT_PATH}/queries/scripts/{TARGET_TABLE}/'
 
     standings_generator = NBAEndpoint(endpoint='leaguestandingsv3')
 

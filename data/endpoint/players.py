@@ -1,8 +1,5 @@
-from data import *
-
-
 def get_players_data():
-    """ get data for the season """
+    """ get scripts for the season """
     generate_players_json()
     data = player_generator.response['resultSets'][0]
 
@@ -15,7 +12,7 @@ def get_players_data():
 
 
 def generate_players_json():
-    """ get all player data for a given season """
+    """ get all player scripts for a given season """
     parameters_players = get_request_parameters()
     player_generator.send_request(parameters_players)
 
