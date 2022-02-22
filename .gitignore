@@ -11,10 +11,10 @@
 
 # environment variables
 venv/
-.env
 
 # local files
 database/
+airflow/logs/
 
 # test files
 /**/.pytest_cache/

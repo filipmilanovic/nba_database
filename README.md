@@ -16,6 +16,9 @@ The project should now be set up and ready to run and interact with GitHub
 - The database should now be available at [localhost:3308](http://localhost:3308), with PHPMyAdmin available at
 [localhost:8080](http://localhost:8080)
 
+In Airflow, set mysql_secret variable like:
+{"mysql_host": "127.0.0.1", "mysql_port": "3308", "mysql_user": "root", "mysql_password": "password"}
+
 #### Database Connection
 By default, this project has been set up to work with MySQL databases.  All the SQL connections are defined at 
 [connections.py](data/utils/connections.py).

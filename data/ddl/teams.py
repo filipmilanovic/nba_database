@@ -12,3 +12,4 @@ def create_table_teams(metadata):
               sql.Column('season', sql.INT),
               sql.Column('utc_written_at', sql.DATETIME, server_default=sql.func.now()))
     metadata.create_all()
+

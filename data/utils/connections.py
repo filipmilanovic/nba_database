@@ -1,132 +1,69 @@
 # SETTING UP SQL CONNECTIONS
-from dotenv import load_dotenv
-import os
 import pandas as pd
-import sqlalchemy as sql
-from utils.colours import Colour
-from utils.functions import get_distinct_ids
-from utils.params import AS_UPSERT
-
-# load connection variables from .env file
-load_dotenv()
 
 
-def get_connection(db: str):
-    """ set up MySQL connection """
-    mysql_user = 'root'
-    mysql_pass = os.environ['MYSQL_ROOT_PASSWORD']
-    mysql_host = os.environ['MYSQL_HOST']
-    mysql_port = os.environ['MYSQL_PORT']
+def write_row(conn, target_table: str, data: list):
+    """ use this where data needs to be inserted by single row (e.g. different columns per row) """
+    query = ''
+    for i in range(len(data)):
+        query = f"""insert into {target_table} ({", ".join(data[0].keys())}) values ('{"', '".join(data[i].values())}')"""
+        conn.cursor().execute(query)
+        conn.cursor().close()
+        conn.commit()
 
-    try:
-        eng = sql.create_engine(f'mysql://{mysql_user}:{mysql_pass}@{mysql_host}:{mysql_port}/{db}?charset=utf8mb4')
-        conn = eng.connect()
-        meta = sql.MetaData(eng)
-        print(Colour.green + f'Established SQL connection to {db} schema' + Colour.end)
-    except sql.exc.OperationalError:
-        print(Colour.red + f"Couldn't establish SQL connection to {db}" + Colour.end)
-        eng, meta, conn = None, None, None
-
-    return eng, meta, conn
+    return query
 
 
-def get_write_query(metadata, connection, data: list, target_table: str, delete_query=None):
-    if AS_UPSERT:
-        connection.execute(delete_query)
-    if data:
-        connection.execute(metadata.tables[target_table].insert(), data)
-        status = Colour.green + 'DB (Success)' + Colour.end
-    else:
-        status = 'DB (Nothing to write)'
+def write_batch(conn, target_table: str, data: list):
+    """ use this were data can be inserted by batch (e.g. known column per row) """
+    values = ', '.join(["', '".join(data[i].values()) for i in range(len(data))])
+    query = f"""insert into {target_table} ({", ".join(data[0].keys())}) values ('{values}')"""
+    conn.cursor().execute(query)
+    conn.cursor().close()
+    conn.commit()
 
-    return status
-
-
-def get_delete_query(metadata, engine, target_table: str, column: str, values: list):
-    metadata.reflect(bind=engine)
-    table = metadata.tables[target_table]
-
-    output = table.delete().where(table.c[column].in_(values))
-
-    return output
+    return query
 
 
-def write_data(engine, metadata, connection, data: list, target_table: str, primary_key: str):
-    """ write scripts to the DB """
-    distinct_ids = get_distinct_ids(data, primary_key)
+def write_data(conn, target_table: str, primary_key: str, data: list, by: str, rebuild=False):
+    """ write data to the DB """
+    primary_ids = [row[primary_key] for row in data]
+    if not rebuild:
+        delete_query = f"""delete from {target_table} where {primary_key} in ({', '.join(primary_ids)})"""
+        conn.cursor().execute(delete_query)
+        conn.cursor().close()
+        conn.commit()
 
-    if AS_UPSERT:
-        delete_query = get_delete_query(metadata=metadata,
-                                        engine=engine,
-                                        target_table=target_table,
-                                        column=primary_key,
-                                        values=distinct_ids)
-    else:
-        delete_query = None
+    insert_query = ''
+    if by == 'row':
+        insert_query = write_row(conn, target_table, data)
+    elif by == 'batch':
+        insert_query = write_batch(conn, target_table, data)
 
-    status = get_write_query(metadata=metadata,
-                             connection=connection,
-                             data=data,
-                             target_table=target_table,
-                             delete_query=delete_query)
-
-    return status
+    return insert_query
 
 
-def get_table_query(metadata, engine, name, column, cond):
-    metadata.reflect(bind=engine)
-    table = metadata.tables[name]
-
-    output = sql.sql.select([table]).where(table.c[column].in_(cond))
-    return output
-
-
-def get_column_query(metadata, engine, name, column, cond_col=None, cond_val=None):
-    metadata.reflect(bind=engine)
-    table = metadata.tables[name]
-    if cond_col:
-        output = sql.sql.select([table.c[column]]).where(table.c[cond_col].in_(cond_val)).distinct()
-    else:
-        output = sql.sql.select([table.c[column]]).distinct()
-    return output
-
-
-def get_join_query(metadata, engine, left, right, column=False, cond=False):
-    metadata.reflect(bind=engine)
-    left_table = metadata.tables[left]
-    right_table = metadata.tables[right]
-    join = left_table.join(right=right_table, onclause=left_table.c.game_id == right_table.c.game_id)
-
-    try:
-        output = sql.sql.select('*').select_from(join).where(left_table.c[column].in_(cond))
-    except KeyError:
-        output = sql.sql.select('*').select_from(join)
-
-    return output
-
-
-def check_db_duplicates(data,
-                        use_headers: bool,
-                        data_key: str,
+def check_db_duplicates(conn,
                         target_table: str,
                         target_key: str,
-                        metadata,
-                        engine,
-                        connection):
+                        data_key: str,
+                        data,
+                        use_headers: bool,
+                        rebuild=False):
     """ check for existing observations in the DB """
-    if not AS_UPSERT:
-        # find rows where scripts already exists in DB
-        selectable = get_column_query(metadata, engine, target_table, target_key)
-        skip = pd.read_sql(sql=selectable, con=connection)[target_key].tolist()
+    if not rebuild:
+        # find rows where data already exists in DB
+        skip = conn.cursor().execute(f'select {target_key} from {target_table}').fetch()
+        conn.cursor().close()
         if use_headers:
-            # get location for key in each row of scripts
+            # get location for key in each row of data
             headers = data['headers']
             rows = data['rowSet']
             header_loc = headers.index(data_key)
 
             data['rowSet'] = [row for row in rows if str(row[header_loc]) not in skip]
         else:
-            # scripts frame conversion helps with speed for larger checks
+            # data frame conversion helps with speed for larger checks
             data_frame = pd.DataFrame(data)
 
             # ensures null values all as None, as MySQL can't take nan
@@ -138,7 +75,9 @@ def check_db_duplicates(data,
     return output
 
 
-def get_query(query_path: str, file_name: str, extension='sql'):
-    query_location = f'{query_path}{file_name}.{extension}'
-    with open(query_location, 'r+') as f:
-        return f.read()
+def create_table(conn, target_table: str, rebuild=False):
+    if rebuild:
+        create_statement = open(f'ddl/{target_table}.sql', 'r').read()
+        conn.cursor().execute(create_statement)
+        conn.cursor().close()
+        conn.commit()
