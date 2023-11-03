@@ -1,23 +1,13 @@
-version: '3.7'
+version: '3.9'
 
 services:
-  db:
-    env_file: '.env'
-    image: mysql:${MYSQL_VERSION}
-    restart: always
-    container_name: nba_database
+  postgres:
+    image: postgres:14-alpine
     ports:
-      - '3308:3306'
+      - 5432:5432
     volumes:
-      - ./database:/var/lib/mysql
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    restart: always
-    container_name: nba_database_phpmyadmin
+      - ~/apps/postgres:/var/lib/postgresql/data
     environment:
-      PMA_HOST: 'db'
-      PMA_USER: 'root'
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    ports:
-      - '8080:80'
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=user
+      - POSTGRES_DB=nba

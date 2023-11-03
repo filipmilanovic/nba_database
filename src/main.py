@@ -1,5 +1,7 @@
 """ hello """
 import json
+import sqlalchemy as sql
+
 # import requests as r
 from classes.endpoint import NBAEndpoint
 
@@ -19,9 +21,27 @@ target_parameters = parameters[TARGET_TABLE]['parameters']
 TargetEndpoint = NBAEndpoint(endpoint=target_endpoint,
                              header=header)
 
-print(TargetEndpoint.send_request(target_parameters))
+TargetEndpoint.send_request(target_parameters)
 
-# games_endpoint.send_request(parameters[TARGET_TABLE])
+eng = sql.create_engine('postgresql://user:password@127.0.0.1:5432/nba', echo=False)
+conn = eng.connect()
+meta = sql.MetaData()
+
+draft = sql.Table('draft',
+    meta,
+    sql.Column('raw_data', sql.JSON())
+)
+
+meta.create_all(eng)
+
+
+data = {
+    'raw_data': TargetEndpoint.response
+}
+
+conn.execute(meta.tables[TARGET_TABLE].insert(), data)
+conn.commit()
+
 
 
 # TARGET_TABLE = 'transactions'
