@@ -1,4 +1,3 @@
-# from utils.functions import get_parameters_string
 import requests as r
 
 
