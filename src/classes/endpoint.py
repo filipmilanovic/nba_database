@@ -33,24 +33,25 @@ class NBAEndpoint:
         self.url = f'https://stats.nba.com/stats/{self.endpoint}/?{self.parameters}'
 
     def send_request(self,
-                     parameters: dict):
+                     parameters: dict,
+                     tries=3):
         """ Ingests and converts parameters to full URL and saves the latest response within the object """
         self.set_endpoint_parameters(parameters)
         self.set_endpoint_url()
 
-        self.tries = 3
+        self.tries = tries
 
         while self.tries > 0:
             try:
                 self.response = self.session.get(self.url, timeout=5).json()
                 self.tries = 0
+
+                return self.response
             except (r.exceptions.ConnectTimeout, r.exceptions.ReadTimeout):
                 # restart Session and retry if time-out
                 self.session = self.start_session()
                 self.tries -= 1
                 continue
-
-        return self.response
 
     def close_session(self):
         self.session.close()

@@ -4,14 +4,8 @@
 #.idea
 .idea/
 
-# files
-/**/test.py
-/**/debug.log
-/**/output/*.csv
-
 # environment variables
 venv/
-.env
 
 # local files
 database/
