@@ -4,14 +4,10 @@
             "endpoint": "drafthistory",
             "parameters": {
                 "LeagueID": "00"
-            }
-        },
-    "games":
-        {
-            "endpoint": "scheduleLeaguev2",
-            "parameters": {
-                "LeagueID": "00",
-                "Season": "2020"
-            }
+            },
+            "unique_keys": [
+                "PERSON_ID",
+                "SEASON"
+            ]
         }
 }

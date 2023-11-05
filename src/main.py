@@ -1,13 +1,8 @@
 """ hello """
-import datetime as dt
-import hashlib
 import json
 import sqlalchemy as sql
 
-# import requests as r
-from classes.endpoint import NBAEndpoint
-from classes.datamodel import DataModel
-
+from classes.datatask import DataTask
 
 ## get core parameters
 with open('src/utils/header.json', 'r') as file:
@@ -31,44 +26,16 @@ if not conn.dialect.has_schema(conn, 'raw'):
     conn.execute(sql.schema.CreateSchema('raw'))
     conn.commit()
 
+## loop through endpoints to bring to sql
+for target in parameters.keys():
+    Task = DataTask(target=target,
+                    parameters=parameters[target],
+                    header=header,
+                    sql_parameters=sql_parameters)
 
-## run specific job
-TARGET_TABLE = 'draft'
-
-target_endpoint = parameters[TARGET_TABLE]['endpoint']
-target_parameters = parameters[TARGET_TABLE]['parameters']
-# target_parameters['Season'] = 2020
-
-TargetEndpoint = NBAEndpoint(endpoint=target_endpoint,
-                             header=header)
-
-TargetEndpoint.send_request(target_parameters)
-
-draft_model = DataModel(TARGET_TABLE,
-                        **sql_parameters)
-
-draft_model.get_response_components(TargetEndpoint)
-
-draft_model.get_key_indices(['PERSON_ID', 'SEASON'])
-
-draft_model.parse_data()
-
-draft_model.create_raw_table()
-
-draft_model.load_raw_data()
-
-
-
-
-# # TARGET_TABLE = 'transactions'
-# # TABLE_PRIMARY_KEY = 'transaction_id'
-
-# # url = 'https://stats.nba.com/js/data/playermovement/NBA_Player_Movement.json'
-
-# # response = r.request(
-# #     method='GET',
-# #     url=url,
-# #     headers=header
-# # )
-
-# # print(response.text)
+    Task.create_endpoint()
+    Task.send_endpoint_request()
+    Task.create_data_model()
+    Task.get_response_data()
+    Task.clean_response_data()
+    Task.write_raw_data()

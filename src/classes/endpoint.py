@@ -1,5 +1,5 @@
-import requests as r
 
+import requests as r
 
 class NBAEndpoint:
     """ Create object pointing to specified endpoint from stats.nba.com """
@@ -37,7 +37,7 @@ class NBAEndpoint:
         """ Ingests and converts parameters to full URL and saves the latest response within the object """
         self.set_endpoint_parameters(parameters)
         self.set_endpoint_url()
-
+        
         self.tries = tries
 
         while self.tries > 0:
