@@ -23,5 +23,28 @@
             ],
             "response_keys": ["leagueSchedule", "gameDates"],
             "data_key": "games"
+        },
+    "playoffs":
+        {
+            "endpoint": "commonplayoffseries",
+            "parameters": {
+                "LeagueID": "00",
+                "Season": "2020"
+            },
+            "unique_keys": [
+                "GAME_ID"
+            ]
+        },
+    "lineups":
+        {
+            "endpoint": "playergamelogs",
+            "parameters": {
+                "LeagueID": "00",
+                "Season": "2021-22"
+            },
+            "unique_keys": [
+                "GAME_ID",
+                "PLAYER_ID"
+            ]
         }
 }

@@ -28,7 +28,7 @@ if not conn.dialect.has_schema(conn, 'raw'):
 
 ## loop through endpoints to bring to sql
 for target in parameters.keys():
-    if target == 'games':
+    if target == 'lineups':
         Task = DataTask(target=target,
                         parameters=parameters[target],
                         header=header,
