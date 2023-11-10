@@ -1,14 +1,7 @@
 # Byte-compiled / optimized / DLL files
 /**/__pycache__/
-
-#.idea
-.idea/
-
-# environment variables
-venv/
-
-# local files
-database/
-
-# test files
 /**/.pytest_cache/
+.idea/
+.vscode/
+venv/
+database/

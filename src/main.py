@@ -28,14 +28,15 @@ if not conn.dialect.has_schema(conn, 'raw'):
 
 ## loop through endpoints to bring to sql
 for target in parameters.keys():
-    Task = DataTask(target=target,
-                    parameters=parameters[target],
-                    header=header,
-                    sql_parameters=sql_parameters)
+    if target == 'games':
+        Task = DataTask(target=target,
+                        parameters=parameters[target],
+                        header=header,
+                        sql_parameters=sql_parameters)
 
-    Task.create_endpoint()
-    Task.send_endpoint_request()
-    Task.create_data_model()
-    Task.get_response_data()
-    Task.clean_response_data()
-    Task.write_raw_data()
+        Task.create_endpoint()
+        Task.send_endpoint_request()
+        Task.create_data_model()
+        Task.get_response_data()
+        Task.clean_response_data()
+        Task.write_raw_data()

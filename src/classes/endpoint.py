@@ -44,6 +44,7 @@ class NBAEndpoint:
             try:
                 self.response = self.session.get(self.url, timeout=5).json()
                 self.tries = 0
+                # print(self.response['leagueSchedule']['gameDates'])
 
                 return self.response
             except (r.exceptions.ConnectTimeout, r.exceptions.ReadTimeout):

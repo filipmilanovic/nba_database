@@ -7,9 +7,11 @@ class DataModel:
     """ Create object used as interfact to postgres data model """
     def __init__(self,
                  target_table: str,
+                 parameters: dict,
                  **kwargs):
         
         self.target_table = target_table
+        self.parameters = parameters
         self.eng = kwargs['eng']
         self.meta = kwargs['meta']
         self.conn = kwargs['conn']
@@ -21,27 +23,50 @@ class DataModel:
 
     def get_response_components(self,
                                 endpoint):
-        self.response_fields = endpoint.response['resultSets'][0]['headers']
-        self.response_values = endpoint.response['resultSets'][0]['rowSet']
+        # if the response deviates from the header/rowset standard, have to manually define the keys used in the response
+        if self.parameters.get('response_keys'):
+            response = endpoint.response
+            for key in self.parameters['response_keys']:
+                response = response.get(key)
+            self.response_values = response
+        else:
+            self.response_fields = endpoint.response['resultSets'][0]['headers']
+            self.response_values = endpoint.response['resultSets'][0]['rowSet']
     
-    def get_key_indices(self,
-                        unique_keys: list):
-        self.key_indices = {f'{key}_INDEX': self.response_fields.index(key) for key in unique_keys}
+    def get_key_indices(self):
+        # if the response deviates from the header/rowset standard, then response is already dict
+        if self.parameters.get('response_keys'):
+            pass
+        else:
+            self.key_indices = {f'{key}_INDEX': self.response_fields.index(key) for key in self.parameters['unique_keys']}
 
     def parse_data(self):
-        self.parsed_data = [
-            {
-                'id':
-                    hashlib.md5(
-                        bytes(' '.join([str(row[index]) for index in self.key_indices.values()]), encoding='utf-8')
-                    ).hexdigest(),
-                'raw_data':
-                    {
-                        self.response_fields[i]: row[i] for i in range(len(self.response_fields))
-                    }
-            }
-            for row in self.response_values
-        ]
+        if self.parameters.get('response_keys'):
+            self.parsed_data = [
+                {
+                    'id':
+                        hashlib.md5(
+                            bytes(' '.join([str(row[index]) for index in self.parameters['unique_keys']]), encoding='utf-8')
+                        ).hexdigest(),
+                    'raw_data':
+                        row[self.parameters['data_key']]
+                }
+                for row in self.response_values
+            ]
+        else:
+            self.parsed_data = [
+                {
+                    'id':
+                        hashlib.md5(
+                            bytes(' '.join([str(row[index]) for index in self.key_indices.values()]), encoding='utf-8')
+                        ).hexdigest(),
+                    'raw_data':
+                        {
+                            self.response_fields[i]: row[i] for i in range(len(self.response_fields))
+                        }
+                }
+                for row in self.response_values
+            ]
     
     def create_raw_table(self):
         self.model = sql.Table(self.target_table,

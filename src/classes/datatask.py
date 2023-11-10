@@ -28,6 +28,7 @@ class DataTask:
     
     def create_data_model(self):
         self.data_model = DataModel(self.target,
+                                    self.parameters,
                                     **self.sql_parameters)
         print(f'Created {self.target} data model')
 
@@ -36,7 +37,7 @@ class DataTask:
         print(f'Moved {self.target} response to {self.target} data model')
     
     def clean_response_data(self):
-        self.data_model.get_key_indices(self.parameters['unique_keys'])
+        self.data_model.get_key_indices()
         self.data_model.parse_data()
         print(f'Cleaned {self.target} data')
 
