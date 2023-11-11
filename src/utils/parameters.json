@@ -18,11 +18,11 @@
                 "LeagueID": "00",
                 "Season": "2020"
             },
+            "response_keys": ["leagueSchedule", "gameDates"],
+            "data_key": "games",
             "unique_keys": [
                 "gameDate"
-            ],
-            "response_keys": ["leagueSchedule", "gameDates"],
-            "data_key": "games"
+            ]
         },
     "playoffs":
         {
