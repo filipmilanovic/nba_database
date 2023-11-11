@@ -8,11 +8,11 @@ class DataModel:
     def __init__(self,
                  target_table: str,
                  parameters: dict,
-                 **kwargs):
+                 sql_parameters: dict):
 
         self.target_table = target_table
         self.parameters = parameters
-        self.kwargs = kwargs
+        self.sql = sql_parameters
         self.response_fields = None
         self.response_values = None
         self.unique_fields = None
@@ -94,13 +94,13 @@ class DataModel:
         Creates the nba.raw table if it does not already exist.
         """
         sql.Table(self.target_table,
-            self.kwargs['meta'],
+            self.sql['meta'],
             sql.Column('id', sql.VARCHAR, primary_key=True),
             sql.Column('raw_data', sql.JSON),
             sql.Column('row_created_at', sql.DateTime, default=dt.datetime.now())
         )
 
-        self.kwargs['meta'].create_all(self.kwargs['eng'])
+        self.sql['meta'].create_all(self.sql['eng'])
 
     def load_raw_data(self):
         """
@@ -108,10 +108,10 @@ class DataModel:
         fields
         """
         insert_stmt = sql.dialects.postgresql.insert(
-            self.kwargs['meta'].tables[f'raw.{self.target_table}']
+            self.sql['meta'].tables[f'raw.{self.target_table}']
         ).values(self.parsed_data)
 
         insert_stmt = insert_stmt.on_conflict_do_nothing(index_elements=['id'])
 
-        self.kwargs['conn'].execute(insert_stmt)
-        self.kwargs['conn'].commit()
+        self.sql['conn'].execute(insert_stmt)
+        self.sql['conn'].commit()

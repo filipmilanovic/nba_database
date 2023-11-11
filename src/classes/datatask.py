@@ -29,7 +29,7 @@ class DataTask:
     def create_data_model(self):
         self.data_model = DataModel(self.target,
                                     self.parameters,
-                                    **self.sql_parameters)
+                                    self.sql_parameters)
         print(f'Created {self.target} data model')
 
     def get_response_data(self):
